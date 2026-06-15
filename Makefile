@@ -25,8 +25,10 @@ dev:
 	pip install -e '.[dev]'
 
 antlr-gen:
-	java -jar $(ANTLR_JAR) -Dlanguage=Python3 -visitor -listener \
-		-o src/nsdsl/dsl/generated grammar/JSON.g4
+	rm -f src/nsdsl/dsl/generated/JSON*.py src/nsdsl/dsl/generated/JSON*.tokens \
+		src/nsdsl/dsl/generated/JSON*.interp
+	cd grammar && java -jar antlr-4.13.2-complete.jar -Dlanguage=Python3 -visitor -listener \
+		-o ../src/nsdsl/dsl/generated JSON.g4
 
 test:
 	$(PY) -m pytest -q tests/
