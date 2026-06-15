@@ -1,0 +1,8 @@
+{
+  "guid": "PR000001",
+  "Title": "Gold Loyalty Discount",
+  "description": "Personalized 10% discount for gold-loyalty users (case-study Scenario 1)",
+  "rule": [
+    { "loyalty": { "equal": "gold" } }
+  ]
+}
