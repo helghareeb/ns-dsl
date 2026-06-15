@@ -33,6 +33,9 @@ paper/*.bbl
 paper/*.blg
 paper/*.synctex.gz
 paper/*.pdf
+paper/*.fdb_latexmk
+paper/*.fls
+paper/*.spl
 !paper/figures/
 
 # OS
