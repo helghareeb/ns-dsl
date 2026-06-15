@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "description": "Locked calibration for the ns-dsl FGCS evaluation. Content-hashed (SHA-256); the hash is stamped into every results CSV (Rule R6). tau values are provisional until fit on a held-out calibration workload at M10.",
+  "random_seeds": [20260615, 20260616, 20260617],
+  "reps_per_cell": 30,
+  "decisions_per_trial": 200,
+  "bootstrap_resamples": 5000,
+  "failure_rate_gate": 0.05,
+  "lambda_to_rps": {"low": 50, "mid": 200, "high": 800},
+  "scenarios": {
+    "S1": {"tau": 0.50, "base_has_latest": 0.70, "stale_persist_frac": 0.50, "stale_vs_unseen": 0.70, "dirty_cache_prob": 0.25},
+    "S2": {"tau": 0.60, "base_has_latest": 0.60, "stale_persist_frac": 0.60, "stale_vs_unseen": 0.75, "dirty_cache_prob": 0.35},
+    "S3": {"tau": 0.50, "base_has_latest": 0.55, "stale_persist_frac": 0.50, "stale_vs_unseen": 0.65, "dirty_cache_prob": 0.30}
+  },
+  "latency_model_ms": {"hop_mu": 1.6, "hop_sigma": 0.5, "local": 0.2},
+  "partition_prob": 0.5,
+  "tier_a": {"replicas": 5, "cache_ratio": 0.5, "lambda": "mid",
+             "failure_inject": [0.0, 0.1, 0.3], "partition": ["none", "transient"]},
+  "tier_b": {"replicas": [3, 7], "cache_ratio": [0.2, 0.8], "lambda": ["low", "high"],
+             "systems": ["neutro-waa", "neutro-wga", "quorum-bool", "centralized"]},
+  "messages_per_decision": {
+    "neutro-waa": "R", "neutro-wga": "R", "quorum-bool": "R", "lww-crdt": "R",
+    "centralized": 1, "raft-lww": 1, "single-peer": 1, "naive-cache": 0
+  }
+}
