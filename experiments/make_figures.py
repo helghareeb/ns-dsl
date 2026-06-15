@@ -18,7 +18,7 @@ SUMMARY = ROOT / "results" / "tables" / "per_config_summary.csv"
 FIGDIR = ROOT / "results" / "figures"
 
 ORDER = ["centralized", "raft-lww", "neutro-waa", "neutro-wga", "quorum-bool",
-         "lww-crdt", "single-peer", "naive-cache"]
+         "pbs-quorum", "lww-crdt", "single-peer", "naive-cache"]
 
 
 def _save(fig, name: str) -> None:
@@ -46,16 +46,36 @@ def fig_stale_vs_phi(df: pd.DataFrame, scenario: str = "S2") -> None:
 
 def fig_pareto(df: pd.DataFrame, scenario: str = "S2", phi: float = 0.1) -> None:
     sub = df[(df.scenario == scenario) & (df.partition == "none")
-             & (df.failure_inject_phi == phi)]
-    fig, ax = plt.subplots(figsize=(6, 4))
-    for _, r in sub.iterrows():
-        ax.scatter(r.stale_rate, r.availability, s=60)
-        ax.annotate(r.system, (r.stale_rate, r.availability), fontsize=7,
-                    xytext=(4, 4), textcoords="offset points")
+             & (df.failure_inject_phi == phi)].set_index("system")
+    fig, ax = plt.subplots(figsize=(6.5, 4.2))
+    markers = {"neutro-waa": "*", "neutro-wga": "*"}
+    for sysname in ORDER:
+        if sysname not in sub.index:
+            continue
+        r = sub.loc[sysname]
+        ax.scatter(r.stale_rate, r.availability, s=140 if sysname.startswith("neutro") else 60,
+                   marker=markers.get(sysname, "o"), label=sysname, zorder=3)
     ax.set_xlabel("stale-decision rate (lower is better)")
     ax.set_ylabel("availability (higher is better)")
     ax.set_title(f"Correctness/availability trade-off ({scenario}, $\\varphi$={phi})")
+    ax.legend(fontsize=7, ncol=2, loc="lower left")
+    ax.grid(True, alpha=0.2)
     _save(fig, "f3_pareto")
+
+
+def fig_throughput() -> None:
+    path = ROOT / "results" / "tables" / "throughput.csv"
+    if not path.exists():
+        return
+    d = pd.read_csv(path).set_index("system")
+    systems = [s for s in ORDER if s in d.index]
+    fig, ax = plt.subplots(figsize=(7, 4))
+    ax.bar(range(len(systems)), [d.throughput_dps.get(s, 0) for s in systems])
+    ax.set_xticks(range(len(systems)))
+    ax.set_xticklabels(systems, rotation=20, fontsize=8)
+    ax.set_ylabel("throughput (decisions/sec)")
+    ax.set_title("Measured throughput under concurrent load (real HTTP testbed)")
+    _save(fig, "f10_throughput")
 
 
 def fig_availability_partition(df: pd.DataFrame, scenario: str = "S2", phi: float = 0.1) -> None:
@@ -159,6 +179,7 @@ def main() -> None:
     fig_latency_measured()
     fig_sensitivity()
     fig_s3_convergence()
+    fig_throughput()
     print(f"figures -> {FIGDIR}")
 
 

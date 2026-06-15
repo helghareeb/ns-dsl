@@ -13,10 +13,10 @@ SUMMARY = ROOT / "results" / "tables" / "per_config_summary.csv"
 OUT = ROOT / "paper" / "tables"
 
 ORDER = ["centralized", "raft-lww", "neutro-waa", "neutro-wga", "quorum-bool",
-         "lww-crdt", "single-peer", "naive-cache"]
+         "pbs-quorum", "lww-crdt", "single-peer", "naive-cache"]
 LABEL = {"centralized": "Centralized", "raft-lww": "Raft-LWW", "neutro-waa": "\\textbf{Neutro-WAA}",
-         "neutro-wga": "\\textbf{Neutro-WGA}", "quorum-bool": "Quorum-bool", "lww-crdt": "LWW-CRDT",
-         "single-peer": "Single-peer", "naive-cache": "Naive-cache"}
+         "neutro-wga": "\\textbf{Neutro-WGA}", "quorum-bool": "Quorum-bool", "pbs-quorum": "PBS-quorum",
+         "lww-crdt": "LWW-CRDT", "single-peer": "Single-peer", "naive-cache": "Naive-cache"}
 
 
 def headline_table(df: pd.DataFrame, scenario: str, phi: float) -> str:

@@ -37,7 +37,7 @@ JITTER_FRAC = 0.25
 
 ONE_HOP = {"single-peer", "centralized", "raft-lww"}
 ALL_HOPS = {"neutro-waa", "neutro-wga", "lww-crdt"}
-MAJORITY = {"quorum-bool"}
+MAJORITY = {"quorum-bool", "pbs-quorum"}
 LOCAL = {"naive-cache"}
 
 

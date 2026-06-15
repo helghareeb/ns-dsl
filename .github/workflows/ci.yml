@@ -1,0 +1,40 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e '.[dev,testbed]'
+      - name: Test suite
+        run: PYTHONPATH=src:. python -m pytest -q tests/
+      - name: Quick experiment smoke (calibration hash + aggregator)
+        run: |
+          PYTHONPATH=src:. python -m experiments.run_all --quick
+          PYTHONPATH=src:. python -m experiments.analyze_results
+
+  antlr-regen-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Regenerate parser and assert no diff
+        run: |
+          rm -f src/nsdsl/dsl/generated/JSON*.py src/nsdsl/dsl/generated/JSON*.tokens \
+                src/nsdsl/dsl/generated/JSON*.interp
+          cd grammar && java -jar antlr-4.13.2-complete.jar -Dlanguage=Python3 -visitor -listener \
+                -o ../src/nsdsl/dsl/generated JSON.g4
+          cd ..
+          git diff --exit-code src/nsdsl/dsl/generated

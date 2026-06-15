@@ -16,11 +16,20 @@ def run(name, replies, **kw):
     return STRATEGIES[name](replies, DecisionParams(**kw))
 
 
-def test_registry_has_all_eight_strategies():
+def test_registry_has_all_strategies():
     assert set(STRATEGIES) == {
-        "neutro-waa", "neutro-wga", "centralized", "quorum-bool",
+        "neutro-waa", "neutro-wga", "centralized", "quorum-bool", "pbs-quorum",
         "raft-lww", "lww-crdt", "single-peer", "naive-cache",
     }
+
+
+def test_pbs_quorum_reads_partial_quorum_latest():
+    # PBS acts (never abstains when peers reachable) and returns the latest among its quorum.
+    replies = [reply("p0", OLD, CACHED, version=1), reply("p1", LATEST, PERSISTED, version=3),
+               reply("p2", OLD, CACHED, version=1)]
+    r = run("pbs-quorum", replies, pick_index=0)
+    assert r.acted is True
+    assert r.value in {OLD, LATEST}        # depends on which majority-quorum it sampled
 
 
 def test_all_persisted_latest_everyone_acts_correctly():

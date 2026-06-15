@@ -17,12 +17,14 @@ from .workload import AUTHORITY_ID, DECIDER_ID, DecisionInstance
 
 _ONE_HOP = {"single-peer", "centralized", "raft-lww"}
 _ALL_HOPS = {"neutro-waa", "neutro-wga", "lww-crdt"}
-_MAJORITY = {"quorum-bool"}
+_MAJORITY = {"quorum-bool", "pbs-quorum"}
 
 
 def messages_per_decision(system: str, replicas: int) -> int:
     if system in {"neutro-waa", "neutro-wga", "quorum-bool", "lww-crdt"}:
         return replicas
+    if system == "pbs-quorum":
+        return replicas // 2 + 1            # partial quorum
     if system == "naive-cache":
         return 0
     return 1

@@ -11,3 +11,13 @@ experiments.
 | Aggregate | `python -m experiments.analyze_results` | `per_config_summary.csv`, `pairwise_tests.csv`, `multiseed_validation.csv` | ⬜ after run | Holm + 5000× bootstrap + multi-seed sign agreement |
 
 Tier-B sensitivity sweeps and the Docker real-latency runs are pending (M10b cont. / M5).
+
+## Scaled Q1 run (2026-06-16)
+
+| Job | Command | Artifacts | Status |
+|-----|---------|-----------|--------|
+| Scaled chain | calibrate -> run_all -> analyze -> tier_b -> s3 -> latency -> throughput | summary/pairwise/multiseed/sensitivity/s3/latency/throughput CSVs | 🟡 running |
+
+Scaled design: 5 seeds, 50 reps/cell, 300 decisions/trial, phi in {0,0.1,0.2,0.3}, 9 systems
+(adds PBS bounded-staleness baseline). Adds measured throughput (decisions/sec under load) and a
+real Docker container run of the peer testbed.

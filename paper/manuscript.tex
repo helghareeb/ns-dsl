@@ -108,16 +108,18 @@ tension specific to microservices. These works frame the problem we target; none
 freshness-aware decision mechanism.
 
 \paragraph{Consistency models and CRDTs.} Causal+~\cite{lloyd2011cops}, probabilistically bounded
-staleness (PBS)~\cite{bailis2012pbs}, conflict-free replicated data types~\cite{shapiro2011crdt}, and
-the PACELC trade-off~\cite{abadi2012consistency} give the vocabulary of staleness. PBS is the closest
-prior art for ``probabilistic freshness,'' but it reasons about quorum probabilities over a
-\emph{boolean} read, not a three-valued per-peer provenance fused into an act/abstain decision.
+staleness (PBS)~\cite{bailis2012pbs}, conflict-free replicated data types~\cite{shapiro2011crdt,preguica2018crdt},
+the PACELC trade-off~\cite{abadi2012consistency}, and surveys of non-transactional consistency
+models~\cite{viotti2016consistency} give the vocabulary of staleness. PBS is the closest prior art for
+``probabilistic freshness,'' but it reasons about quorum probabilities over a \emph{boolean} read,
+not a three-valued per-peer provenance fused into an act/abstain decision; we therefore include a
+PBS-style partial-quorum reader as an explicit baseline (Section~\ref{sec:methods}).
 
-\paragraph{Consensus (for positioning).} Raft~\cite{ongaro2014raft} and Paxos~\cite{lamport1998paxos}
-solve \emph{agreement} on a replicated log. Our layer is orthogonal: it decides, above whatever
-substrate exists, whether the value a service already holds is fresh enough to act on. We therefore
-use a Raft-style last-writer-wins reader only as a reference point, never as a competitor for the same
-job.
+\paragraph{Consensus (for positioning).} Raft~\cite{ongaro2014raft}, Paxos~\cite{lamport1998paxos},
+and Byzantine fault tolerance~\cite{castro2002pbft} solve \emph{agreement} on a replicated log. Our
+layer is orthogonal: it decides, above whatever substrate exists, whether the value a service already
+holds is fresh enough to act on. We therefore use a Raft-style last-writer-wins reader only as a
+reference point, never as a competitor for the same job.
 
 \paragraph{Rules engines and DSLs.} Production rule systems (Rete~\cite{forgy1982rete},
 Drools~\cite{proctor2012drools}) and DSL tooling~\cite{mernik2005dsl,parr2013antlr} are uniformly
@@ -133,9 +135,11 @@ decision. This intersection---neutrosophic aggregation applied to microservice s
 fill.
 
 \paragraph{Reproducible evaluation.} We follow the microservices benchmarking
-tradition~\cite{gan2019deathstarbench,zhou2021trainticket} and statistically rigorous performance
-methodology~\cite{georges2007rigorous}: multiple repetitions and seeds, effect sizes with confidence
-intervals, and multiple-comparison correction.
+tradition~\cite{gan2019deathstarbench,zhou2021trainticket}, statistically rigorous performance
+methodology~\cite{georges2007rigorous}, and reproducibility principles for cloud
+experiments~\cite{papadopoulos2021reproducible}: multiple repetitions and seeds, effect sizes with
+confidence intervals, multiple-comparison correction, and a content-hashed, single-aggregator
+pipeline.
 
 %====================================================================
 \section{Methods}
@@ -213,8 +217,9 @@ We compare seven decision strategies on identical decision streams: our \textbf{
 \textbf{neutro-wga}; \emph{centralized} (a strongly-consistent authority---the correctness ceiling);
 \emph{raft-lww} (a leader's committed value); \emph{quorum-bool} (majority vote over boolean
 fresh/stale flags---the apples-to-apples control that isolates the value of $(T,I,F)$ vs.\ a bit);
-\emph{lww-crdt} (eventually consistent last-writer-wins); \emph{single-peer}; and \emph{naive-cache}
-(local read, no coordination---the floor).
+\emph{pbs-quorum} (a probabilistically-bounded-staleness partial-quorum reader~\cite{bailis2012pbs},
+the nearest prior art); \emph{lww-crdt} (eventually consistent last-writer-wins); \emph{single-peer};
+and \emph{naive-cache} (local read, no coordination---the floor).
 
 \subsection{Experimental design and statistics}
 Each cell is $(\text{scenario},\text{system},\varphi,\text{partition})$ at $R=5$ replicas, cache
@@ -276,11 +281,15 @@ span an optimistic--conservative frontier, selectable per scenario via $\tau$.
 \paragraph{Measured latency.} On a real localhost HTTP testbed (Section~\ref{sec:methods}), the
 strategies separate into three latency tiers that confirm the communication-cost model
 (Figure~\ref{fig:latency}): a local read (naive-cache, $\approx 0$\,ms), a single round-trip
-(centralized, raft-lww, single-peer), and an $R$-peer fan-out (neutro-waa/wga, quorum-bool, lww-crdt).
-At a $5$\,ms per-hop RTT the neutrosophic layer's median decision latency is in the fan-out tier
-alongside quorum and CRDT---the measured price of decentralized decision making, against a single hop
-for the centralized authority. (Absolute values include loopback runtime overhead; the operative cost
-axis is messages per decision, reported exactly in Tables~\ref{tab:headline-s2}--\ref{tab:headline-s1}.)
+(centralized, raft-lww, single-peer), a partial quorum (pbs-quorum), and a full $R$-peer fan-out
+(neutro-waa/wga, quorum-bool, lww-crdt). At a $5$\,ms per-hop RTT the neutrosophic layer's median
+decision latency is in the fan-out tier alongside quorum and CRDT---the measured price of decentralized
+decision making, against a single hop for the centralized authority. (Absolute values include loopback
+runtime overhead; the operative cost axis is messages per decision, reported exactly in
+Tables~\ref{tab:headline-s2}--\ref{tab:headline-s1}.) Figure~\ref{fig:throughput} reports measured
+throughput under concurrent load: the local and single-hop strategies sustain the highest
+decisions/sec, and the fan-out strategies (including ours) the lowest, consistent with their message
+cost.
 
 \paragraph{Sensitivity.} The advantage is stable across replica counts $R\in\{3,5,7\}$ and grows with
 the cache ratio $\rho$ (Figure~\ref{fig:sensitivity}): as more reads are unconfirmed, the gap between
@@ -337,6 +346,11 @@ round-trip, and $R$-peer fan-out tiers.}\label{fig:latency}\end{figure}
 \includegraphics[width=0.7\linewidth]{f9_s3_convergence.pdf}
 \caption{S3: a fresh clone recovers state by replaying the log; SVNNWGA acceptance trails until
 catch-up while SVNNWAA stays available throughout.}\label{fig:s3}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.8\linewidth]{f10_throughput.pdf}
+\caption{Measured throughput (decisions/sec) under concurrent closed-loop load on the real HTTP
+testbed.}\label{fig:throughput}\end{figure}
 
 %====================================================================
 \section{Discussion}

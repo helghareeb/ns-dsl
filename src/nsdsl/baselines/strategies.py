@@ -62,3 +62,22 @@ def naive_cache(replies: Sequence[PeerReply], p: DecisionParams) -> Reading:
     if local is None:
         return Reading(False)
     return Reading(True, local.value)       # acts on its own copy regardless of freshness
+
+
+def pbs_quorum(replies: Sequence[PeerReply], p: DecisionParams) -> Reading:
+    """Probabilistically-bounded-staleness style partial-quorum read (Bailis et al.).
+
+    Reads a partial quorum (majority-sized) of the reachable peers and returns the highest-version
+    value among them, always acting (bounded, not zero, staleness) -- the nearest prior art. It is
+    cheaper than reading all peers (lww-crdt) but staler than a full read; unlike quorum-bool it
+    does not abstain, and unlike our layer it ignores the (T,I,F) confirmation signal.
+    """
+    reachable = [r for r in replies if r.reachable and r.status is not DEFAULT]
+    if not reachable:
+        return Reading(False)
+    k = len(replies) // 2 + 1                       # target partial-quorum size
+    ordered = sorted(reachable, key=lambda r: r.peer_id)
+    start = p.pick_index % len(ordered)             # deterministic quorum selection
+    quorum = (ordered + ordered)[start:start + k]   # k peers, wrapping
+    best = max(quorum, key=lambda r: r.version)
+    return Reading(True, best.value)
