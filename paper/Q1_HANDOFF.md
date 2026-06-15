@@ -23,15 +23,17 @@ layer, NOT a Raft/Paxos replacement. Apples-to-apples control = quorum-of-boolea
 | M2 DSL/parser | ✅ done | ANTLR JSON parser committed; Listings 2.1/2.2 parse |
 | M3 rules engine | ✅ done | Business Rule 001 fires; tag sets; provenance |
 | M4 S1 pricing (single-node) | ✅ done | personalized price over in-proc bus |
-| M5 Docker testbed | ⬜ next-ish | FastAPI services + redis + postgres; deployment wrapper |
-| M6 consensus + oracle | ⬜ **core, buildable now in-proc** | aggregate/protocol + god_log/truth |
+| M6 consensus + oracle | ✅ done | aggregate/protocol + god_log/truth; WAA/WGA, partition+heal, convergence |
+| M8 baselines | ⬜ **next (evaluation engine)** | centralized / quorum-bool / raft-lww / lww / no-consensus / single-peer |
+| M9 harness + aggregator | ⬜ next | run_all.py + analyze_results.py (single canonical aggregator); calibration.json |
 | M7 S3 clone catch-up | ⬜ | log replay -> consensus-consistent state |
-| M8 baselines | ⬜ | centralized / quorum-bool / raft-lww / lww / no-consensus / single-peer |
-| M9 harness + aggregator | ⬜ | run_all.py + analyze_results.py (single canonical aggregator) |
-| M10 full runs (≥3 seeds) | ⬜ | Tier A + Tier B; promote validated cells |
+| M5 Docker testbed | ⬜ | FastAPI services + redis + postgres; deployment/fidelity wrapper |
+| M10 full runs (≥3 seeds) | ⬜ | Tier A + Tier B; promote validated cells (hours of compute) |
 | M11 manuscript | ⬜ | elsarticle, N5 order, fresh prose |
 
-**Test suite:** 40 passing (`make test`). **No experiments run yet** (no manuscript-grade numbers).
+**Test suite:** 50 passing (`make test`). **No experiments run yet** (no manuscript-grade numbers).
+**Core system complete (M0–M4, M6).** Next phase = the evaluation engine (M8 baselines + M9 harness
++ single canonical aggregator), which produces the first real numbers.
 
 ## Reordering note
 M6 (consensus + oracle) does not require Docker — the bus is a `Protocol`, so N peers can be
