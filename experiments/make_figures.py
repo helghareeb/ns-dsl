@@ -132,6 +132,22 @@ def fig_sensitivity() -> None:
     _save(fig, "f6_sensitivity")
 
 
+def fig_s3_convergence() -> None:
+    path = ROOT / "results" / "tables" / "s3_convergence.csv"
+    if not path.exists():
+        return
+    d = pd.read_csv(path)
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.plot(d.events_replayed, d.recovery_fraction, marker=".", label="state recovered")
+    ax.plot(d.events_replayed, d.wga_accept_rate, marker=".", label="cluster accept (SVNNWGA)")
+    ax.plot(d.events_replayed, d.waa_accept_rate, marker=".", label="cluster accept (SVNNWAA)")
+    ax.set_xlabel("log events replayed by the fresh clone")
+    ax.set_ylabel("fraction")
+    ax.set_title("S3 clone catch-up via log replay")
+    ax.legend(fontsize=8)
+    _save(fig, "f9_s3_convergence")
+
+
 def main() -> None:
     if not SUMMARY.exists():
         raise SystemExit(f"missing {SUMMARY}; run experiments/analyze_results.py first")
@@ -142,6 +158,7 @@ def main() -> None:
     fig_signal_richness(df)
     fig_latency_measured()
     fig_sensitivity()
+    fig_s3_convergence()
     print(f"figures -> {FIGDIR}")
 
 

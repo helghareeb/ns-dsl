@@ -5,6 +5,8 @@
 \usepackage{graphicx}
 \usepackage{url}
 \usepackage[strings]{underscore} % let underscores in DOIs render in the bibliography
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \graphicspath{{../results/figures/}}
 
 \journal{Future Generation Computer Systems}
@@ -178,6 +180,26 @@ cached holders) iff $s\geq\tau$, else \emph{abstains}. No central node participa
 freshness decision, not replication: it never establishes agreement on a log; it decides whether the
 value a service already holds is trustworthy enough to act on.
 
+\begin{algorithm}[t]
+\caption{Decentralized neutrosophic freshness decision for key $k$}
+\label{alg:decide}
+\begin{algorithmic}[1]
+\Require peers $P$, weights $w$, operator $\oplus\in\{\mathrm{SVNNWAA},\mathrm{SVNNWGA}\}$, threshold $\tau$
+\State $Z \gets \{\}$
+\For{$p \in P$}
+  \State $z_p \gets$ \Call{Query}{$p,k$} \textbf{if} $p$ reachable \textbf{else} $(0,0,1)$ \Comment{absent reads as falsity}
+  \State $Z \gets Z \cup \{(p, z_p)\}$
+\EndFor
+\State $\bar{z} \gets \oplus(\{z_p\}, w)$ \Comment{Eq.~\eqref{eq:waa} or~\eqref{eq:wga}}
+\State $s \gets (2 + \bar{z}.T - \bar{z}.I - \bar{z}.F)/3$ \Comment{deneutrosophy}
+\If{$s \ge \tau$}
+  \State \Return \Call{Act}{majority value among persisted (else cached) peers}
+\Else
+  \State \Return \textsc{Abstain}
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
 \subsection{Scenarios and ground truth}
 Three scenarios instantiate the case study: (S1) personalized dynamic pricing (read-heavy), (S2)
 suspicious-order fraud detection (asymmetric cost---a missed fraud is worse than a false alarm), and
@@ -265,6 +287,14 @@ the cache ratio $\rho$ (Figure~\ref{fig:sensitivity}): as more reads are unconfi
 the neutrosophic layer and the eventual-consistency baselines widens, because that is exactly the
 regime in which the indeterminacy axis carries information.
 
+\paragraph{S3: clone catch-up.} A freshly cloned replica boots with every key absent and replays
+the logs-as-DSL stream one event at a time (Figure~\ref{fig:s3}). Recovered state grows linearly
+with events replayed; under the conservative SVNNWGA the clone drags cluster consensus to reject
+until it has nearly caught up (95\% acceptance after $48$ of $50$ events), whereas under the
+optimistic SVNNWAA the established peers carry every decision at $100\%$ acceptance throughout the
+catch-up window. The operator choice thus governs the availability-vs-strictness behavior precisely
+during the ``White Friday'' scaling event the chapter motivates.
+
 \paragraph{Significance.} Table~\ref{tab:significance} lists the headline paired contrasts with
 Holm-corrected $p$-values and effect sizes; all are significant after correction, with large effect
 sizes for the comparisons against eventual consistency and the availability gain under partition.
@@ -302,6 +332,11 @@ round-trip, and $R$-peer fan-out tiers.}\label{fig:latency}\end{figure}
 \includegraphics[width=0.95\linewidth]{f6_sensitivity.pdf}
 \caption{Sensitivity of the stale-decision rate to replica count $R$ and cache ratio $\rho$
 (S2, $\varphi=0.1$).}\label{fig:sensitivity}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.7\linewidth]{f9_s3_convergence.pdf}
+\caption{S3: a fresh clone recovers state by replaying the log; SVNNWGA acceptance trails until
+catch-up while SVNNWAA stays available throughout.}\label{fig:s3}\end{figure}
 
 %====================================================================
 \section{Discussion}
