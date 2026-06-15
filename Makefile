@@ -43,13 +43,21 @@ down:
 	docker compose -f docker/docker-compose.yml down -v
 
 experiments:
-	$(PY) experiments/run_all.py
+	$(PY) -m experiments.calibrate
+	$(PY) -m experiments.run_all
+	$(PY) -m experiments.analyze_results
+
+sensitivity:
+	$(PY) -m experiments.run_tier_b
+
+latency:
+	$(PY) -m bench.latency_bench
 
 figures:
-	$(PY) experiments/make_figures.py
+	$(PY) -m experiments.make_figures
 
 tables:
-	$(PY) experiments/make_tables.py
+	$(PY) -m experiments.make_tables
 
 paper:
 	cd paper && latexmk -pdf manuscript.tex

@@ -28,12 +28,19 @@ PYTHONPATH=src:. .venv/bin/python -m experiments.run_all       # -> results/raw/
 PYTHONPATH=src:. .venv/bin/python -m experiments.analyze_results
 #   -> results/tables/{per_config_summary,pairwise_tests,multiseed_validation}.csv
 
-# 5. figures + LaTeX tables (read ONLY the aggregator output)
+# 5. sensitivity sweep (vary R, rho) and measured latency on the real HTTP testbed
+PYTHONPATH=src:. .venv/bin/python -m experiments.run_tier_b    # -> results/tables/sensitivity.csv
+PYTHONPATH=src:. .venv/bin/python -m bench.latency_bench       # -> results/tables/latency_measured.csv
+
+# 6. figures + LaTeX tables (read ONLY the aggregator / measurement outputs)
 PYTHONPATH=src:. .venv/bin/python -m experiments.make_figures  # -> results/figures/*.pdf
 PYTHONPATH=src:. .venv/bin/python -m experiments.make_tables   # -> paper/tables/*.tex
 
-# 6. build the manuscript
+# 7. build the manuscript
 cd paper && latexmk -pdf manuscript.tex                        # -> paper/manuscript.pdf
+
+# Docker deployment of the same peer topology (optional, for fidelity):
+#   docker compose -f docker/docker-compose.yml up --build
 ```
 
 A `--quick` flag on `run_all` does a 1-seed smoke run for development; full runs (no flag) are

@@ -78,6 +78,60 @@ def fig_availability_partition(df: pd.DataFrame, scenario: str = "S2", phi: floa
     _save(fig, "f7_availability_partition")
 
 
+def fig_signal_richness(df: pd.DataFrame, phi: float = 0.1) -> None:
+    """RQ1: how often the (T,I,F) decision diverges from a boolean quorum, per scenario."""
+    sub = df[(df.partition == "none") & (df.failure_inject_phi == phi)
+             & (df.system == "neutro-waa")].sort_values("scenario")
+    fig, ax = plt.subplots(figsize=(5.5, 3.6))
+    ax.bar(sub.scenario, sub.neutro_bool_disagree, width=0.5, label="neutro vs.\\ boolean disagreement")
+    ax.plot(sub.scenario, sub.i_occupancy, "o--", color="C1", label="mean indeterminacy (cache) occupancy")
+    ax.set_ylabel("fraction of decisions")
+    ax.set_title(f"Signal richness of the $(T,I,F)$ axis ($\\varphi={phi}$)")
+    ax.legend(fontsize=8)
+    _save(fig, "f8_signal_richness")
+
+
+def fig_latency_measured() -> None:
+    path = ROOT / "results" / "tables" / "latency_measured.csv"
+    if not path.exists():
+        return
+    d = pd.read_csv(path)
+    rtts = sorted(d.rtt_ms.unique())
+    systems = [s for s in ORDER if s in set(d.system)]
+    fig, ax = plt.subplots(figsize=(7, 4))
+    width = 0.8 / len(rtts)
+    for k, rtt in enumerate(rtts):
+        sub = d[d.rtt_ms == rtt].set_index("system")
+        xs = [i + (k - len(rtts) / 2) * width for i in range(len(systems))]
+        ax.bar(xs, [sub.p50_ms.get(s, 0) for s in systems], width=width, label=f"RTT={rtt:g}ms")
+    ax.set_xticks(range(len(systems)))
+    ax.set_xticklabels(systems, rotation=20, fontsize=8)
+    ax.set_ylabel("measured decision latency p50 (ms)")
+    ax.set_title("Measured latency on the real HTTP testbed (localhost)")
+    ax.legend(fontsize=8)
+    _save(fig, "f5_latency_measured")
+
+
+def fig_sensitivity() -> None:
+    path = ROOT / "results" / "tables" / "sensitivity.csv"
+    if not path.exists():
+        return
+    d = pd.read_csv(path)
+    systems = ["neutro-waa", "quorum-bool", "lww-crdt", "centralized"]
+    fig, axes = plt.subplots(1, 2, figsize=(9, 3.8))
+    for ax, factor, xlabel in [(axes[0], "replicas", "replicas $R$"),
+                               (axes[1], "cache_ratio", "cache ratio $\\rho$")]:
+        sub = d[d.factor == factor]
+        for s in systems:
+            ss = sub[sub.system == s].sort_values("value")
+            ax.plot(ss.value, ss.stale_rate, marker="o", label=s)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel("stale-decision rate")
+    axes[1].legend(fontsize=7)
+    fig.suptitle("Sensitivity of stale-decision rate (S2, $\\varphi=0.1$)")
+    _save(fig, "f6_sensitivity")
+
+
 def main() -> None:
     if not SUMMARY.exists():
         raise SystemExit(f"missing {SUMMARY}; run experiments/analyze_results.py first")
@@ -85,6 +139,9 @@ def main() -> None:
     fig_stale_vs_phi(df)
     fig_pareto(df)
     fig_availability_partition(df)
+    fig_signal_richness(df)
+    fig_latency_measured()
+    fig_sensitivity()
     print(f"figures -> {FIGDIR}")
 
 

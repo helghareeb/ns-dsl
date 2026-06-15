@@ -45,11 +45,50 @@ def headline_table(df: pd.DataFrame, scenario: str, phi: float) -> str:
     )
 
 
+PAIRWISE = ROOT / "results" / "tables" / "pairwise_tests.csv"
+CONTRASTS = [
+    ("stale_rate", "neutro-waa", "lww-crdt"),
+    ("stale_rate", "neutro-waa", "naive-cache"),
+    ("stale_rate", "neutro-waa", "quorum-bool"),
+    ("availability", "neutro-waa", "centralized"),
+]
+
+
+def significance_table() -> str:
+    pw = pd.read_csv(PAIRWISE)
+    rows = []
+    for metric, a, b in CONTRASTS:
+        for part in ("none", "transient"):
+            m = pw[(pw.scenario == "S2") & (pw.failure_inject_phi == 0.1) & (pw.partition == part)
+                   & (pw.metric == metric)
+                   & (((pw.system_a == a) & (pw.system_b == b))
+                      | ((pw.system_a == b) & (pw.system_b == a)))]
+            if m.empty:
+                continue
+            r = m.iloc[0]
+            d = r.cohens_d if r.system_a == a else -r.cohens_d
+            rows.append(
+                f"{metric.replace('_', '-')} & {a} vs.\\ {b} & {part} & "
+                f"{d:+.2f} & {r.p_holm:.1e} \\\\"
+            )
+    body = "\n".join(rows)
+    return (
+        "\\begin{table}[t]\n\\centering\\small\n"
+        "\\caption{Headline paired contrasts (S2, $\\varphi=0.1$): paired Wilcoxon, Holm-corrected "
+        "within family; Cohen's $d$ from paired differences (90 trials/cell across 3 seeds).}\n"
+        "\\label{tab:significance}\n\\begin{tabular}{lllcc}\n\\toprule\n"
+        "Metric & Contrast & Partition & Cohen's $d$ & $p_{\\mathrm{holm}}$ \\\\\n\\midrule\n"
+        f"{body}\n\\bottomrule\n\\end{{tabular}}\n\\end{{table}}\n"
+    )
+
+
 def main() -> None:
     df = pd.read_csv(SUMMARY)
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "headline_s2.tex").write_text(headline_table(df, "S2", 0.1), encoding="utf-8")
     (OUT / "headline_s1.tex").write_text(headline_table(df, "S1", 0.1), encoding="utf-8")
+    if PAIRWISE.exists():
+        (OUT / "significance.tex").write_text(significance_table(), encoding="utf-8")
     print(f"tables -> {OUT}")
 
 

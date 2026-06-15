@@ -4,6 +4,7 @@
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{url}
+\usepackage[strings]{underscore} % let underscores in DOIs render in the bibliography
 \graphicspath{{../results/figures/}}
 
 \journal{Future Generation Computer Systems}
@@ -34,8 +35,8 @@ proposal into running software (a JSON DSL and rules engine parsed by ANTLR, the
 operators, and the decentralized decision protocol) and evaluate it on an e-commerce testbed
 across three scenarios against six baselines, with $\geq 30$ repetitions per cell, three master
 seeds, per-operator threshold calibration on held-out workloads, Holm-corrected paired tests, and
-5000-resample bootstrap confidence intervals. Every number is regenerable from committed code, a
-content-hashed calibration file, and a recorded seed. The neutrosophic layer occupies a Pareto
+5000-resample bootstrap confidence intervals, plus decision latency measured on a real HTTP testbed.
+Every number is regenerable from committed code, a content-hashed calibration file, and a recorded seed. The neutrosophic layer occupies a Pareto
 interior between strong consistency and eventual consistency: at a $10\%$ failure-injection rate it
 reduces the stale-decision rate by $41\%$ relative to last-writer-wins and by $52\%$ relative to a
 naive cache (Holm-corrected, large effect sizes), while remaining $88\%$ available under network
@@ -208,6 +209,13 @@ availability separately, applies Holm correction within a-priori comparison fami
 Cohen's $d$ with 5000-resample bootstrap 95\% CIs, and flags any cell whose headline contrast does not
 replicate in sign across all three seeds.
 
+Correctness and availability come from this discrete-event simulation, which scales to many cells;
+\emph{decision latency} is measured separately on a real testbed: each peer is a live ASGI endpoint
+and the deciding node drives it with a real asynchronous HTTP client, so every strategy executes its
+true communication pattern (one hop, wait-for-majority, or wait-for-all plus real SVNN aggregation)
+over real sockets with a configurable per-hop RTT. A Docker Compose deployment of the same topology
+(per-service containers plus a Redis event bus) is provided for fidelity and reuse.
+
 %====================================================================
 \section{Results}
 \label{sec:results}
@@ -219,7 +227,7 @@ Table~\ref{tab:headline-s2} reports S2 in full; Table~\ref{tab:headline-s1} repo
 
 \paragraph{RQ1: signal richness.} The indeterminacy axis is heavily populated (mean cache occupancy
 $\approx 0.4$), and the neutrosophic decision differs from a boolean quorum on a substantial fraction
-of decisions---decisions the boolean flag cannot make without abstaining.
+of decisions---decisions the boolean flag cannot make without abstaining (Figure~\ref{fig:signal}).
 
 \paragraph{RQ2: correctness vs.\ eventual consistency.} At $\varphi=0.1$ (S2, no partition),
 neutro-waa attains a stale-rate of $0.245$ $[0.238,0.251]$ versus $0.416$ for lww-crdt and $0.506$ for
@@ -243,8 +251,27 @@ rather than a boolean flag converts indeterminacy into available, correct decisi
 transient: $0.226$ vs.\ $0.288$) at much lower availability ($0.276$ vs.\ $0.993$). WAA and WGA thus
 span an optimistic--conservative frontier, selectable per scenario via $\tau$.
 
+\paragraph{Measured latency.} On a real localhost HTTP testbed (Section~\ref{sec:methods}), the
+strategies separate into three latency tiers that confirm the communication-cost model
+(Figure~\ref{fig:latency}): a local read (naive-cache, $\approx 0$\,ms), a single round-trip
+(centralized, raft-lww, single-peer), and an $R$-peer fan-out (neutro-waa/wga, quorum-bool, lww-crdt).
+At a $5$\,ms per-hop RTT the neutrosophic layer's median decision latency is in the fan-out tier
+alongside quorum and CRDT---the measured price of decentralized decision making, against a single hop
+for the centralized authority. (Absolute values include loopback runtime overhead; the operative cost
+axis is messages per decision, reported exactly in Tables~\ref{tab:headline-s2}--\ref{tab:headline-s1}.)
+
+\paragraph{Sensitivity.} The advantage is stable across replica counts $R\in\{3,5,7\}$ and grows with
+the cache ratio $\rho$ (Figure~\ref{fig:sensitivity}): as more reads are unconfirmed, the gap between
+the neutrosophic layer and the eventual-consistency baselines widens, because that is exactly the
+regime in which the indeterminacy axis carries information.
+
+\paragraph{Significance.} Table~\ref{tab:significance} lists the headline paired contrasts with
+Holm-corrected $p$-values and effect sizes; all are significant after correction, with large effect
+sizes for the comparisons against eventual consistency and the availability gain under partition.
+
 \input{tables/headline_s2.tex}
 \input{tables/headline_s1.tex}
+\input{tables/significance.tex}
 
 \begin{figure}[t]\centering
 \includegraphics[width=0.7\linewidth]{f2_stale_vs_phi.pdf}
@@ -260,6 +287,21 @@ on the Pareto frontier.}\label{fig:pareto}\end{figure}
 \includegraphics[width=0.7\linewidth]{f7_availability_partition.pdf}
 \caption{Availability without vs.\ with transient partition (S2, $\varphi=0.1$). The
 strongly-consistent baselines stall; the neutrosophic layer stays available.}\label{fig:partition}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.65\linewidth]{f8_signal_richness.pdf}
+\caption{RQ1: the indeterminacy axis is well populated and the $(T,I,F)$ decision diverges from a
+boolean quorum on a substantial fraction of decisions.}\label{fig:signal}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.8\linewidth]{f5_latency_measured.pdf}
+\caption{Measured median decision latency on the real localhost HTTP testbed: local read, single
+round-trip, and $R$-peer fan-out tiers.}\label{fig:latency}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.95\linewidth]{f6_sensitivity.pdf}
+\caption{Sensitivity of the stale-decision rate to replica count $R$ and cache ratio $\rho$
+(S2, $\varphi=0.1$).}\label{fig:sensitivity}\end{figure}
 
 %====================================================================
 \section{Discussion}
@@ -287,11 +329,12 @@ oracle's causal-observation model; we unit-test the oracle.
 calibration seeds and freeze them. The paired seed design gives every strategy identical failure and
 arrival streams.
 
-\paragraph{External.} The evaluation is simulation-based on a single e-commerce workload and one
-parameterization; latency is an analytical network model, not measured wall-clock. Real measured
-latency on a Dockerized testbed (services over Redis with injected network faults) is the primary
-direction of ongoing work and is expected to complement, not replace, these correctness results. The
-failure model is probabilistic, not adversarial/Byzantine.
+\paragraph{External.} The correctness/availability evaluation is simulation-based on a single
+e-commerce workload and one parameterization (sensitivity to $R$ and $\rho$ is probed in
+Figure~\ref{fig:sensitivity}). Decision latency is measured on a \emph{real} localhost HTTP testbed,
+but absolute values include loopback runtime overhead; a multi-host Dockerized deployment under WAN
+latency and injected network faults (e.g.\ Toxiproxy) remains future work and is expected to preserve
+the measured latency tiers. The failure model is probabilistic, not adversarial/Byzantine.
 
 \paragraph{Conclusion.} Latency-like quantities are heavy-tailed, so we use nonparametric paired tests
 and report effect sizes with bootstrap CIs; multiple comparisons are Holm-corrected within a-priori

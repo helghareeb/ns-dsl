@@ -28,10 +28,11 @@ layer, NOT a Raft/Paxos replacement. Apples-to-apples control = quorum-of-boolea
 | M9 harness + aggregator | ✅ done | run_all.py + analyze_results.py (Holm + bootstrap) + figures |
 | M7 S3 clone catch-up | ✅ done | log replay -> consensus-consistent state |
 | M10 calibrate + full runs | ✅ done | tau fit (held-out) + 3-seed validated grid + multi-seed (96%) |
-| M11 manuscript | ✅ draft | elsarticle, N5 order, compiles to 13pp; numbers from aggregator |
-| M10c Tier-B sensitivity | ⬜ optional | sweep R, lambda, rho (one-factor-at-a-time) |
-| M5 Docker testbed | ⬜ strengthener | FastAPI + redis + postgres for REAL measured latency |
-| Reference audit | ⬜ before submit | clear "(verify)" DOIs in related_work_scan via REFERENCE_AUDIT_ORDERS |
+| M11 manuscript | ✅ draft | elsarticle, N5 order, compiles to 16pp; numbers from aggregator |
+| M10c Tier-B sensitivity | ✅ done | sweep R, rho -> sensitivity.csv + figure f6 |
+| M5 measured latency | ✅ done | real localhost HTTP testbed (bench/) + Docker Compose deploy files; figure f5 |
+| Reference audit | ✅ applied | fixed georges DOI, pardon author, re-added 2 Springer DOIs (underscore pkg) |
+| GitHub remote | ✅ pushed | git@github.com:helghareeb/ns-dsl.git (main) |
 
 **Test suite:** 70 passing (`make test`). **Validated results exist** (3 seeds, Holm, bootstrap;
 `status=validated`). **Manuscript compiles** (`paper/manuscript.pdf`, 13 pp).
