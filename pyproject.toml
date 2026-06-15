@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "nsdsl"
+version = "0.1.0"
+description = "Neutrosophic DSL, rules engine, and a decentralized (T,I,F)-aggregating decision layer for global-state decisions in microservices."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Haitham A. El-Ghareeb", email = "abu@eelya.org" }]
+dependencies = [
+    "antlr4-python3-runtime==4.13.2", # MUST match the pinned ANTLR jar in grammar/
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "pandas>=2.1",
+    "statsmodels>=0.14",
+    "pydantic>=2.6",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# Service/testbed deps — only needed for the Docker microservices testbed (M5+)
+testbed = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "httpx>=0.27",
+    "redis>=5.0",
+    "docker>=7.0",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "hypothesis>=6.100",
+    "matplotlib>=3.8",
+    "ruff>=0.4",
+    "mypy>=1.9",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nsdsl"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]   # honor the PYTHONPATH=. standing rule (R10)
+testpaths = ["tests"]
+filterwarnings = ["error::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_ignores = true
+disallow_untyped_defs = false
