@@ -1,0 +1,7 @@
+scenario,system,tau,utility
+S1,neutro-waa,0.3,0.6678
+S1,neutro-wga,0.3,0.1597
+S2,neutro-waa,0.7,-0.1306
+S2,neutro-wga,0.3,-0.5659
+S3,neutro-waa,0.3,0.301
+S3,neutro-wga,0.3,-0.2406

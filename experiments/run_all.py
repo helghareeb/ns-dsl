@@ -20,7 +20,9 @@ from .calibration import calibration_sha256, load_calibration
 from .metrics import evaluate_trial, neutro_bool_disagreement
 from .workload import generate_trial
 
-RAW_DIR = Path(__file__).resolve().parents[1] / "results" / "raw"
+ROOT = Path(__file__).resolve().parents[1]
+RAW_DIR = ROOT / "results" / "raw"
+TAU_FIT = ROOT / "results" / "tables" / "tau_fit.csv"
 
 COLUMNS = [
     "calibration_sha256", "code_git_sha", "random_seed", "status",
@@ -29,6 +31,18 @@ COLUMNS = [
     "failure_rate", "messages_mean", "mlat_p50", "mlat_p95", "mlat_p99",
     "i_occupancy", "neutro_bool_disagree",
 ]
+
+
+def _load_tau_fit() -> dict[tuple[str, str], float]:
+    """(scenario, system) -> fitted tau for the neutro operators, if calibration has run."""
+    if not TAU_FIT.exists():
+        return {}
+    import csv as _csv
+    fit: dict[tuple[str, str], float] = {}
+    with TAU_FIT.open() as fh:
+        for row in _csv.DictReader(fh):
+            fit[(row["scenario"], row["system"])] = float(row["tau"])
+    return fit
 
 
 def _git_sha() -> str:
@@ -51,7 +65,9 @@ def run(quick: bool = False) -> list[Path]:
     cal = load_calibration()
     cal_sha = calibration_sha256(cal)
     git_sha = _git_sha()
-    status = "provisional"   # tau not yet fit on a held-out workload; promote at M10
+    tau_fit = _load_tau_fit()
+    # validated requires fitted tau + a full (non-quick) multi-seed run; else provisional.
+    status = "validated" if (tau_fit and not quick) else "provisional"
 
     seeds = cal["random_seeds"][:1] if quick else cal["random_seeds"]
     reps = 5 if quick else cal["reps_per_cell"]
@@ -74,7 +90,8 @@ def run(quick: bool = False) -> list[Path]:
             writer = csv.DictWriter(fh, fieldnames=COLUMNS)
             writer.writeheader()
             for scenario in scenarios:
-                tau = cal["scenarios"][scenario]["tau"]
+                default_tau = cal["scenarios"][scenario]["tau"]
+                waa_tau = tau_fit.get((scenario, "neutro-waa"), default_tau)
                 for phi in tier_a["failure_inject"]:
                     for partition in tier_a["partition"]:
                         for trial in range(reps):
@@ -83,10 +100,11 @@ def run(quick: bool = False) -> list[Path]:
                                 cache_ratio=rho, failure_inject=phi, partition=partition,
                                 trial=trial, calibration=cal,
                             )
-                            disagree = neutro_bool_disagreement(instances, tau=tau)
+                            disagree = neutro_bool_disagreement(instances, tau=waa_tau)
                             for system in systems:
-                                m = evaluate_trial(system, instances, tau=tau, replicas=R,
-                                                   local_ms=local_ms)
+                                system_tau = tau_fit.get((scenario, system), default_tau)
+                                m = evaluate_trial(system, instances, tau=system_tau,
+                                                   replicas=R, local_ms=local_ms)
                                 writer.writerow({
                                     "calibration_sha256": cal_sha, "code_git_sha": git_sha,
                                     "random_seed": seed, "status": status,

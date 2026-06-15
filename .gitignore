@@ -15,15 +15,11 @@ venv/
 .ruff_cache/
 .hypothesis/
 
-# Experiment outputs — keep generators + a small committed sample, drop bulk (Rule G5)
+# Experiment outputs — drop bulky raw per-trial CSVs (Rule G5); keep the small canonical
+# summary tables + figures version-controlled (they are the paper's evidence, R1-regenerable).
 results/raw/*
 !results/raw/.gitkeep
 !results/raw/sample/
-results/tables/*.csv
-!results/tables/.gitkeep
-results/figures/*.png
-results/figures/*.pdf
-!results/figures/.gitkeep
 
 # Large generated datasets (>10MB) — commit the seeded generator, not the bulk
 datasets/*.jsonl

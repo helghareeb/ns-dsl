@@ -119,6 +119,33 @@ def pairwise_tests(df: pd.DataFrame, metric: str, family_id: str,
     return out
 
 
+def multiseed_validation(df: pd.DataFrame, contrasts: list[tuple[str, str, str]]) -> pd.DataFrame:
+    """For each headline contrast, check the effect replicates in sign across all seeds (N9/N14).
+
+    A (scenario, phi, partition) cell is 'replicated' iff the sign of (mean_a - mean_b) agrees
+    across every seed. Cells that do not replicate must be reported as provisional.
+    """
+    rows = []
+    for metric, a, b in contrasts:
+        for keys, grp in df.groupby(GROUP_KEYS, sort=True):
+            scenario, phi, partition = keys
+            per_seed = []
+            for _seed, sg in grp.groupby("random_seed"):
+                wide = sg.pivot_table(index="trial", columns="system", values=metric)
+                if a in wide and b in wide:
+                    per_seed.append(wide[a].mean() - wide[b].mean())
+            if len(per_seed) < 2:
+                continue
+            signs = {(-1 if d < 0 else 1 if d > 0 else 0) for d in per_seed}
+            rows.append({
+                "metric": metric, "system_a": a, "system_b": b, "scenario": scenario,
+                "failure_inject_phi": phi, "partition": partition, "n_seeds": len(per_seed),
+                "mean_diff": sum(per_seed) / len(per_seed),
+                "signs_agree": len(signs) == 1,
+            })
+    return pd.DataFrame(rows)
+
+
 def main() -> None:
     cal = load_calibration()
     paths = sorted(glob.glob(RAW_GLOB))
@@ -140,8 +167,19 @@ def main() -> None:
     pairwise = pd.concat([f for f in families if not f.empty], ignore_index=True)
     pairwise.to_csv(TABLES / "pairwise_tests.csv", index=False)
 
-    print(f"summary  -> {TABLES / 'per_config_summary.csv'} ({len(summary)} cells)")
-    print(f"pairwise -> {TABLES / 'pairwise_tests.csv'} ({len(pairwise)} contrasts)")
+    headline_contrasts = [
+        ("stale_rate", "neutro-waa", "quorum-bool"),
+        ("stale_rate", "neutro-waa", "lww-crdt"),
+        ("availability", "neutro-waa", "centralized"),
+    ]
+    ms = multiseed_validation(raw, headline_contrasts)
+    ms.to_csv(TABLES / "multiseed_validation.csv", index=False)
+
+    print(f"summary   -> {TABLES / 'per_config_summary.csv'} ({len(summary)} cells)")
+    print(f"pairwise  -> {TABLES / 'pairwise_tests.csv'} ({len(pairwise)} contrasts)")
+    if not ms.empty:
+        print(f"multiseed -> {TABLES / 'multiseed_validation.csv'} "
+              f"({ms.signs_agree.mean() * 100:.0f}% of cells replicate across seeds)")
     print(f"calibration_sha256 = {raw['calibration_sha256'].iloc[0]}")
 
 
