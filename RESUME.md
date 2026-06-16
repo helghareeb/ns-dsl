@@ -1,7 +1,7 @@
 # RESUME — ns-dsl
 
-**Coordinated by** `~/Documents/github/ns-SCADA/recover_all.sh` (sequence position 2). See
-`ns-SCADA/STATUS.md` for the live cross-repo state.
+**Coordinated by** `~/Documents/github/research_papers_plan/recover_all.sh` (sequence position 2). See
+`research_papers_plan/STATUS.md` for the live cross-repo state.
 
 - **State:** re-running fresh after the crash (the Tier-A eval is NOT cell-resumable, so partial
   `results/raw/*` is wiped and the run restarted).
