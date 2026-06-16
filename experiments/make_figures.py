@@ -70,11 +70,14 @@ def fig_throughput() -> None:
     d = pd.read_csv(path).set_index("system")
     systems = [s for s in ORDER if s in d.index]
     fig, ax = plt.subplots(figsize=(7, 4))
-    ax.bar(range(len(systems)), [d.throughput_dps.get(s, 0) for s in systems])
+    vals = [d.throughput_dps.get(s, 0) for s in systems]
+    bars = ax.bar(range(len(systems)), vals)
+    ax.set_yscale("log")                       # naive (local) dwarfs network strategies otherwise
     ax.set_xticks(range(len(systems)))
     ax.set_xticklabels(systems, rotation=20, fontsize=8)
-    ax.set_ylabel("throughput (decisions/sec)")
+    ax.set_ylabel("throughput (decisions/sec, log scale)")
     ax.set_title("Measured throughput under concurrent load (real HTTP testbed)")
+    ax.bar_label(bars, fmt="%.0f", fontsize=7, padding=2)
     _save(fig, "f10_throughput")
 
 
