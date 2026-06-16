@@ -23,19 +23,23 @@ services:
   peer1:
     build: { context: .., dockerfile: docker/Dockerfile.service }
     environment: { PEER_ID: p1, RTT_MS: "2.0" }
+    ports: ["8001:8000"]
     depends_on: [redis]
 
   peer2:
     build: { context: .., dockerfile: docker/Dockerfile.service }
     environment: { PEER_ID: p2, RTT_MS: "2.0" }
+    ports: ["8002:8000"]
     depends_on: [redis]
 
   peer3:
     build: { context: .., dockerfile: docker/Dockerfile.service }
     environment: { PEER_ID: p3, RTT_MS: "2.0" }
+    ports: ["8003:8000"]
     depends_on: [redis]
 
   peer4:
     build: { context: .., dockerfile: docker/Dockerfile.service }
     environment: { PEER_ID: p4, RTT_MS: "2.0" }
+    ports: ["8004:8000"]
     depends_on: [redis]

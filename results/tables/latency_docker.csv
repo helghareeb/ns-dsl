@@ -1,0 +1,3 @@
+pattern,n,p50_ms,p95_ms,p99_ms
+1-hop (centralized-like),200,9.558,14.304,17.886
+R-fan-out (neutro-like),200,26.412,37.133,44.364

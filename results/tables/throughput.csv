@@ -1,0 +1,10 @@
+system,concurrency,decisions,throughput_dps
+centralized,32,361,111.6
+lww-crdt,32,79,22.2
+naive-cache,32,296825,98867.9
+neutro-waa,32,78,22.5
+neutro-wga,32,82,24.7
+pbs-quorum,32,109,30.3
+quorum-bool,32,122,35.0
+raft-lww,32,476,151.9
+single-peer,32,435,139.6

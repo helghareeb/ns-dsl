@@ -60,12 +60,13 @@ def test_holm_pvalues_dominate_raw():
     rows = []
     for system, base in [("neutro-waa", 0.1), ("naive-cache", 0.5), ("quorum-bool", 0.3)]:
         for phi in (0.0, 0.1):
-            for trial in range(30):
-                rows.append({
-                    "scenario": "S2", "system": system, "failure_inject_phi": phi,
-                    "partition": "none", "trial": trial,
-                    "stale_rate": float(np.clip(base + rng.normal(0, 0.02), 0, 1)),
-                })
+            for seed in (1, 2):
+                for trial in range(30):
+                    rows.append({
+                        "scenario": "S2", "system": system, "failure_inject_phi": phi,
+                        "partition": "none", "random_seed": seed, "trial": trial,
+                        "stale_rate": float(np.clip(base + rng.normal(0, 0.02), 0, 1)),
+                    })
     df = pd.DataFrame(rows)
     out = pairwise_tests(df, "stale_rate", "F1_stale",
                          ["neutro-waa", "naive-cache", "quorum-bool"])

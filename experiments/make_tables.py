@@ -56,6 +56,7 @@ CONTRASTS = [
 
 def significance_table() -> str:
     pw = pd.read_csv(PAIRWISE)
+    n_trials = int(pw["n_trials"].max()) if "n_trials" in pw.columns and len(pw) else 0
     rows = []
     for metric, a, b in CONTRASTS:
         for part in ("none", "transient"):
@@ -75,7 +76,7 @@ def significance_table() -> str:
     return (
         "\\begin{table}[t]\n\\centering\\small\n"
         "\\caption{Headline paired contrasts (S2, $\\varphi=0.1$): paired Wilcoxon, Holm-corrected "
-        "within family; Cohen's $d$ from paired differences (90 trials/cell across 3 seeds).}\n"
+        f"within family; Cohen's $d$ from paired differences ({n_trials} trials/cell).}}\n"
         "\\label{tab:significance}\n\\begin{tabular}{lllcc}\n\\toprule\n"
         "Metric & Contrast & Partition & Cohen's $d$ & $p_{\\mathrm{holm}}$ \\\\\n\\midrule\n"
         f"{body}\n\\bottomrule\n\\end{{tabular}}\n\\end{{table}}\n"

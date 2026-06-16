@@ -93,7 +93,7 @@ def pairwise_tests(df: pd.DataFrame, metric: str, family_id: str,
     rows = []
     for keys, grp in df.groupby(GROUP_KEYS, sort=True):
         scenario, phi, partition = keys
-        wide = grp.pivot_table(index="trial", columns="system", values=metric)
+        wide = grp.pivot_table(index=["random_seed", "trial"], columns="system", values=metric)
         present = [s for s in systems if s in wide.columns]
         for i in range(len(present)):
             for j in range(i + 1, len(present)):

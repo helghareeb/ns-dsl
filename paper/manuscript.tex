@@ -40,10 +40,11 @@ seeds, per-operator threshold calibration on held-out workloads, Holm-corrected 
 5000-resample bootstrap confidence intervals, plus decision latency measured on a real HTTP testbed.
 Every number is regenerable from committed code, a content-hashed calibration file, and a recorded seed. The neutrosophic layer occupies a Pareto
 interior between strong consistency and eventual consistency: at a $10\%$ failure-injection rate it
-reduces the stale-decision rate by $41\%$ relative to last-writer-wins and by $52\%$ relative to a
-naive cache (Holm-corrected, large effect sizes), while remaining $88\%$ available under network
-partition where a strongly-consistent primary drops to $46\%$; against a boolean quorum control it
-attains comparable correctness at roughly twice the availability, isolating the value of the
+reduces the stale-decision rate by $40\%$ relative to last-writer-wins, by $51\%$ relative to a
+naive cache, and by $29\%$ relative to a probabilistically-bounded-staleness partial-quorum reader
+(Holm-corrected, large effect sizes), while remaining $88\%$ available under network partition where
+a strongly-consistent primary drops to $45\%$; against a boolean quorum control it attains comparable
+correctness at roughly twice the availability, isolating the value of the
 indeterminacy axis. We make no superiority claim over consensus protocols; we characterize an
 honest, reproducible trade-off.
 \end{abstract}
@@ -234,7 +235,7 @@ stale-rate, then frozen. A single canonical aggregator emits all tables and figu
 common calibration SHA-256 across inputs, computes stale-rate over acted decisions (success-only) and
 availability separately, applies Holm correction within a-priori comparison families, reports paired
 Cohen's $d$ with 5000-resample bootstrap 95\% CIs, and flags any cell whose headline contrast does not
-replicate in sign across all three seeds.
+replicate in sign across all five seeds.
 
 Correctness and availability come from this discrete-event simulation, which scales to many cells;
 \emph{decision latency} is measured separately on a real testbed: each peer is a live ASGI endpoint
@@ -247,7 +248,8 @@ over real sockets with a configurable per-hop RTT. A Docker Compose deployment o
 \section{Results}
 \label{sec:results}
 
-Across the validated grid, $96\%$ of headline cells replicate in sign across all three seeds.
+Across the validated grid ($216$ cells over five master seeds), $97\%$ of headline cells replicate
+in sign across all seeds.
 Figure~\ref{fig:stale} shows stale-decision rate versus failure-injection rate; Figure~\ref{fig:pareto}
 the correctness/availability trade-off; Figure~\ref{fig:partition} availability under partition.
 Table~\ref{tab:headline-s2} reports S2 in full; Table~\ref{tab:headline-s1} reports S1.
@@ -257,21 +259,23 @@ $\approx 0.4$), and the neutrosophic decision differs from a boolean quorum on a
 of decisions---decisions the boolean flag cannot make without abstaining (Figure~\ref{fig:signal}).
 
 \paragraph{RQ2: correctness vs.\ eventual consistency.} At $\varphi=0.1$ (S2, no partition),
-neutro-waa attains a stale-rate of $0.245$ $[0.238,0.251]$ versus $0.416$ for lww-crdt and $0.506$ for
-naive-cache---reductions of $41\%$ and $52\%$ (paired Wilcoxon, Holm-corrected $p<10^{-6}$; Cohen's
-$d=-6.05$ vs.\ lww-crdt). In S1 the reduction versus naive-cache reaches $65\%$ ($0.134$ vs.\ $0.385$)
+neutro-waa attains a stale-rate of $0.248$ $[0.242,0.254]$ versus $0.415$ for lww-crdt, $0.506$ for
+naive-cache, and $0.349$ for the PBS partial-quorum reader (the nearest prior art)---reductions of
+$40\%$, $51\%$, and $29\%$ respectively (paired Wilcoxon over $250$ paired trials, Holm-corrected
+$p<10^{-30}$; Cohen's $d=-4.4$ vs.\ lww-crdt). In S1 the reduction versus naive-cache reaches $65\%$
+($0.137$ vs.\ $0.386$)
 at full availability.
 
 \paragraph{RQ3/RQ4: the availability--correctness trade-off.} The strongly-consistent baselines
 (centralized, raft-lww) achieve zero staleness but lose availability under failure, collapsing to
-$0.455$ under transient partition where neutro-waa remains $0.880$ available
-(Cohen's $d=21.6$, Holm-corrected $p<10^{-3}$; Figure~\ref{fig:partition}). Neutro-waa thus occupies the
+$0.453$ under transient partition where neutro-waa remains $0.880$ available
+(Cohen's $d=12.6$, Holm-corrected $p<10^{-30}$; Figure~\ref{fig:partition}). Neutro-waa thus occupies the
 Pareto interior (Figure~\ref{fig:pareto}): nothing dominates it---centralized trades availability for
 its zero staleness, and every full-availability baseline is far staler.
 
 \paragraph{RQ2 vs.\ the boolean control.} Quorum-bool reaches a low stale-rate only by abstaining on
 most decisions ($0.402$ availability at $\varphi=0.1$, S2); neutro-waa attains comparable correctness
-at $0.940$ availability---roughly $2.3\times$. This isolates the contribution: retaining $(T,I,F)$
+at $0.942$ availability---roughly $2.3\times$. This isolates the contribution: retaining $(T,I,F)$
 rather than a boolean flag converts indeterminacy into available, correct decisions.
 
 \paragraph{RQ5: operator ablation.} SVNNWGA is the conservative operator: lower stale-rate (e.g.\ S3
@@ -289,7 +293,9 @@ runtime overhead; the operative cost axis is messages per decision, reported exa
 Tables~\ref{tab:headline-s2}--\ref{tab:headline-s1}.) Figure~\ref{fig:throughput} reports measured
 throughput under concurrent load: the local and single-hop strategies sustain the highest
 decisions/sec, and the fan-out strategies (including ours) the lowest, consistent with their message
-cost.
+cost. The same tiers hold on a containerized deployment (five peer containers plus a Redis bus and
+Postgres under Docker Compose): a single-hop read measures $\approx 9.6$\,ms median and the $R$-peer
+fan-out $\approx 26.4$\,ms median, confirming the result is not an artifact of the in-process harness.
 
 \paragraph{Sensitivity.} The advantage is stable across replica counts $R\in\{3,5,7\}$ and grows with
 the cache ratio $\rho$ (Figure~\ref{fig:sensitivity}): as more reads are unconfirmed, the gap between
@@ -380,14 +386,15 @@ arrival streams.
 
 \paragraph{External.} The correctness/availability evaluation is simulation-based on a single
 e-commerce workload and one parameterization (sensitivity to $R$ and $\rho$ is probed in
-Figure~\ref{fig:sensitivity}). Decision latency is measured on a \emph{real} localhost HTTP testbed,
-but absolute values include loopback runtime overhead; a multi-host Dockerized deployment under WAN
-latency and injected network faults (e.g.\ Toxiproxy) remains future work and is expected to preserve
-the measured latency tiers. The failure model is probabilistic, not adversarial/Byzantine.
+Figure~\ref{fig:sensitivity}). Decision latency is measured on a \emph{real} HTTP testbed---both in-process and on a
+single-host Docker Compose deployment of peer containers, which confirms the same tiers---but
+absolute values include local runtime overhead; a multi-host deployment under WAN latency and
+injected network faults (e.g.\ Toxiproxy) remains future work and is expected to preserve the tiers.
+The failure model is probabilistic, not adversarial/Byzantine.
 
 \paragraph{Conclusion.} Latency-like quantities are heavy-tailed, so we use nonparametric paired tests
 and report effect sizes with bootstrap CIs; multiple comparisons are Holm-corrected within a-priori
-families; cross-seed non-replication ($4\%$ of cells) is flagged and excluded from headline claims.
+families; cross-seed non-replication ($3\%$ of cells) is flagged and excluded from headline claims.
 
 %====================================================================
 \section{Conclusion}
