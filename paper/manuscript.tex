@@ -9,7 +9,7 @@
 \usepackage{algpseudocode}
 \graphicspath{{../results/figures/}}
 
-\journal{Future Generation Computer Systems}
+\journal{Information Sciences}
 
 \begin{document}
 
@@ -35,7 +35,7 @@ a value or \emph{abstain}---with no central authority. The layer sits \emph{abov
 substrate and is \emph{not} a replication or consensus protocol. We turn a previously conceptual
 proposal into running software (a JSON DSL and rules engine parsed by ANTLR, the neutrosophic
 operators, and the decentralized decision protocol) and evaluate it on an e-commerce testbed
-across three scenarios against six baselines, with $\geq 30$ repetitions per cell, three master
+across three scenarios against seven baselines, with $\geq 50$ repetitions per cell, five master
 seeds, per-operator threshold calibration on held-out workloads, Holm-corrected paired tests, and
 5000-resample bootstrap confidence intervals, plus decision latency measured on a real HTTP testbed.
 Every number is regenerable from committed code, a content-hashed calibration file, and a recorded seed. The neutrosophic layer occupies a Pareto
@@ -87,16 +87,26 @@ decentralized $(T,I,F)$-aggregating decision protocol (Section~\ref{sec:methods}
 \item A precise, honest framing: the layer is a per-item \emph{freshness/consistency decision} layer
 that sits above the consistency substrate, \emph{not} a replication or consensus protocol; the
 apples-to-apples control is a boolean quorum (Section~\ref{sec:methods}).
-\item A reproducible evaluation on an e-commerce testbed (three scenarios, seven decision strategies,
-a privileged ground-truth oracle) with held-out threshold calibration, $\geq 30$ reps/cell, three
-seeds, Holm correction, and bootstrap CIs; every number regenerable from committed artifacts
-(Sections~\ref{sec:results}).
+\item A reproducible evaluation on an e-commerce testbed (three scenarios, nine decision strategies
+including a probabilistically-bounded-staleness reader, a privileged ground-truth oracle) with
+held-out threshold calibration, $\geq 50$ reps/cell, five seeds, Holm correction, and bootstrap CIs;
+every number regenerable from committed artifacts (Section~\ref{sec:results}).
 \item Evidence that the layer occupies an honest Pareto interior and that the optimistic (WAA) and
 conservative (WGA) operators span a usable frontier (Sections~\ref{sec:results}--\ref{sec:discussion}).
 \end{enumerate}
 
 This work extends~\cite{elghareeb2020neutro}; all implementation, formalization, and experiments are
 new.
+
+\paragraph{Why now.} The same problem---deciding whether locally-held, possibly-stale shared state is
+trustworthy enough to act on---is surfacing across four 2024--2026 research currents: multi-agent and
+LLM-agent systems that must reason over shared memory and name \emph{consistency} as a top open
+challenge~\cite{chang2025sagallm}; the edge-cloud continuum and serverless state, where an actor reads
+ephemeral or expired state~\cite{marcelino2024goldfish}; ML feature stores that operationalize
+\emph{feature freshness} SLOs~\cite{delarua2024hopsworks,wooders2024ralf}; and microservice
+data-consistency surveys and benchmarks~\cite{laigner2021data,laigner2025marketplace,rodrigues2025slr}.
+Each collapses a graded freshness signal to a boolean or a single probability; the $(T,I,F)$ encoding
+keeps the indeterminacy axis these settings need.
 
 %====================================================================
 \section{Related Work}
@@ -134,6 +144,14 @@ authors' prior work~\cite{nabeeh2019topsis}. To our knowledge no prior work enco
 persistence/freshness as a $(T,I,F)$ triple and fuses peer views into a decentralized systems
 decision. This intersection---neutrosophic aggregation applied to microservice state---is the gap we
 fill.
+
+\paragraph{Accuracy-aware staleness and adaptive consistency.} The closest modern work treats
+staleness as a first-class, accuracy-aware quantity: RALF schedules feature-store maintenance against
+a downstream-accuracy ``regret''~\cite{wooders2024ralf}, and adaptive-consistency tuners select
+consistency levels under cost/SLO pressure. These are \emph{centralized} schedulers/tuners; our layer
+is the \emph{decentralized}, per-item act/abstain dual---each peer fuses $(T,I,F)$ views without a
+central accuracy oracle. We position RALF as the nearest modern point of comparison and deepen the
+contrast with PBS (a single staleness probability vs.\ a fused three-valued provenance).
 
 \paragraph{Reproducible evaluation.} We follow the microservices benchmarking
 tradition~\cite{gan2019deathstarbench,zhou2021trainticket}, statistically rigorous performance
