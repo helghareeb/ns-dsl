@@ -40,3 +40,6 @@ paper/*.spl
 
 # OS
 .DS_Store
+
+# Large raw data (regenerable via download.sh)
+data/*/raw/
