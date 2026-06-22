@@ -61,6 +61,28 @@ def _sample_peer(rng: random.Random, pid: str, gt: str, version: int, scn: dict,
     return PeerReply(pid, None, DEFAULT, 0, True)                    # never seen
 
 
+def _apply_byzantine(rng: random.Random, peers: list[PeerReply], byzantine_frac: float,
+                     gt: str, version: int) -> list[PeerReply]:
+    """Flip a fraction of reachable peers into active adversaries.
+
+    A Byzantine peer claims PERSISTED (inflating aggregate truth) while holding a FABRICATED value
+    at an inflated version -- the worst case for an optimistic operator and for majority value
+    selection. Unreachable peers cannot attack. The fabricated value is never the ground truth, so
+    a decision that acts on it is scored stale.
+    """
+    if byzantine_frac <= 0.0:
+        return peers
+    reachable_idx = [i for i, p in enumerate(peers) if p.reachable]
+    n_byz = int(round(len(peers) * byzantine_frac))
+    if n_byz <= 0 or not reachable_idx:
+        return peers
+    targets = rng.sample(reachable_idx, min(n_byz, len(reachable_idx)))
+    out = list(peers)
+    for i in targets:
+        out[i] = PeerReply(peers[i].peer_id, f"{gt}_byz", PERSISTED, version + 2, True)
+    return out
+
+
 def _apply_reachability(rng: random.Random, peers: list[PeerReply], auth: PeerReply,
                         phi: float, partitioned: bool) -> tuple[list[PeerReply], PeerReply]:
     out: list[PeerReply] = []
@@ -78,8 +100,12 @@ def _apply_reachability(rng: random.Random, peers: list[PeerReply], auth: PeerRe
 def generate_trial(
     *, master_seed: int, scenario: str, replicas: int, cache_ratio: float,
     failure_inject: float, partition: str, trial: int, calibration: dict,
+    byzantine_frac: float = 0.0,
 ) -> list[DecisionInstance]:
-    """Generate one trial's decision stream. Identical across strategies (system excluded)."""
+    """Generate one trial's decision stream. Identical across strategies (system excluded).
+
+    ``byzantine_frac`` injects active adversaries (default 0.0 is a no-op that consumes no RNG, so
+    the submitted baseline stream is byte-identical)."""
     seed = derive_seed(master_seed, scenario, replicas, cache_ratio, failure_inject,
                        partition, trial)
     rng = random.Random(seed)
@@ -95,6 +121,7 @@ def generate_trial(
         authority = PeerReply(AUTHORITY_ID, gt, PERSISTED, n, True)
         partitioned = partition == "transient" and rng.random() < partition_prob
         peers, authority = _apply_reachability(rng, peers, authority, failure_inject, partitioned)
+        peers = _apply_byzantine(rng, peers, byzantine_frac, gt, n)
 
         hops = tuple(_lognormal(rng, lat["hop_mu"], lat["hop_sigma"]) for _ in peers)
         auth_hop = _lognormal(rng, lat["hop_mu"], lat["hop_sigma"])

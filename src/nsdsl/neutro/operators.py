@@ -191,6 +191,70 @@ def svnn_bonferroni(zs: Sequence[SVNN], weights: Sequence[float] | None = None,
     return SVNN(_clamp01(res.T), _clamp01(res.I), _clamp01(res.F))
 
 
+# === Byzantine-robust aggregators (G4) =======================================
+# When a minority of peers report adversarial (T,I,F) triples (e.g. claiming PERSISTED to inflate
+# truth and force a wrong act), the averaging operators above are swayed by the outliers. These
+# robust rules tolerate up to floor((n-1)/2) adversarial triples per coordinate (median /
+# trimmed mean; Yin et al. 2018) or select a single representative agent (Krum; Blanchard et al.
+# 2017). Weights are ignored -- robustness derives from order statistics / geometry, not weighting.
+
+import statistics
+
+
+def svnn_median(zs: Sequence[SVNN], weights: Sequence[float] | None = None) -> SVNN:
+    """Coordinate-wise median of (T, I, F): resists a minority of adversarial triples."""
+    if not zs:
+        raise ValueError("svnn_median requires at least one SVNN")
+    return SVNN(
+        _clamp01(statistics.median(z.T for z in zs)),
+        _clamp01(statistics.median(z.I for z in zs)),
+        _clamp01(statistics.median(z.F for z in zs)),
+    )
+
+
+def svnn_trimmed(zs: Sequence[SVNN], weights: Sequence[float] | None = None,
+                 *, trim: int = 1) -> SVNN:
+    """Coordinate-wise trimmed mean: drop the ``trim`` smallest+largest per axis, average the rest."""
+    if not zs:
+        raise ValueError("svnn_trimmed requires at least one SVNN")
+
+    def tm(vals: list[float]) -> float:
+        s = sorted(vals)
+        k = trim if len(s) > 2 * trim else 0
+        core = s[k: len(s) - k] if k else s
+        return sum(core) / len(core)
+
+    return SVNN(
+        _clamp01(tm([z.T for z in zs])),
+        _clamp01(tm([z.I for z in zs])),
+        _clamp01(tm([z.F for z in zs])),
+    )
+
+
+def svnn_krum(zs: Sequence[SVNN], weights: Sequence[float] | None = None,
+              *, f: int = 1) -> SVNN:
+    """Krum (Blanchard et al. 2017): return the triple closest (sum of squared distances) to its
+    n-f-2 nearest neighbours, discarding the f assumed-adversarial outliers. Falls back to the
+    arithmetic mean when there are too few peers to exclude f."""
+    n = len(zs)
+    if n == 0:
+        raise ValueError("svnn_krum requires at least one SVNN")
+    m = n - f - 2
+    if m < 1:
+        return svnnwaa(zs)
+    pts = [(z.T, z.I, z.F) for z in zs]
+    best_i, best_score = 0, float("inf")
+    for i in range(n):
+        dists = sorted(
+            sum((a - b) ** 2 for a, b in zip(pts[i], pts[j]))
+            for j in range(n) if j != i
+        )
+        s = sum(dists[:m])
+        if s < best_score:
+            best_score, best_i = s, i
+    return zs[best_i]
+
+
 #: Operator panel registry. Parametric members carry a representative default parameter; the
 #: aggregate() dispatcher and the strategy factory look operators up by name here.
 OPERATORS = {
@@ -202,6 +266,15 @@ OPERATORS = {
     "aczel_alsina": svnn_aczel_alsina,  # lambda=2
     "bonferroni": svnn_bonferroni,      # p=q=1 (pairwise interrelation)
 }
+
+#: Byzantine-robust aggregators (G4), kept separate so the audit can contrast them against the
+#: averaging panel under adversarial peers.
+ROBUST_OPERATORS = {
+    "median": svnn_median,
+    "trimmed": svnn_trimmed,
+    "krum": svnn_krum,
+}
+OPERATORS.update(ROBUST_OPERATORS)
 
 
 def aggregate(method: str, zs: Sequence[SVNN], weights: Sequence[float] | None = None) -> SVNN:
