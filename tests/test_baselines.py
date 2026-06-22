@@ -20,7 +20,7 @@ def test_registry_has_all_strategies():
     from nsdsl.consensus.strategy import GRADED_STRATEGIES, SCORE_PANEL_STRATEGIES
     base = {
         "neutro-waa", "neutro-wga", "centralized", "quorum-bool", "pbs-quorum",
-        "raft-lww", "lww-crdt", "single-peer", "naive-cache",
+        "raft-lww", "lww-crdt", "freshness-slo", "single-peer", "naive-cache",
     }
     assert set(STRATEGIES) == base | set(GRADED_STRATEGIES) | set(SCORE_PANEL_STRATEGIES)
     # the graded Axis-A operator panel (G1) + the score panel (G2) are registered
@@ -107,3 +107,15 @@ def test_all_remote_unreachable_only_local_naive_cache_acts():
             assert run(name, replies, decider_id="p0").acted is True  # local read, always available
         else:
             assert run(name, replies).acted is False, name
+
+
+def test_freshness_slo_acts_only_on_confirmed_latest():
+    # the latest version is confirmed (PERSISTED at the max version) -> act on it
+    confirmed = [reply("p0", "v3", PERSISTED, 3), reply("p1", "v2", CACHED, 2)]
+    out = run("freshness-slo", confirmed)
+    assert out.acted is True and out.value == "v3"
+    # the latest version is only cached (unconfirmed) -> SLO not met -> abstain
+    unconfirmed = [reply("p0", "v3", CACHED, 3), reply("p1", "v2", PERSISTED, 2)]
+    assert run("freshness-slo", unconfirmed).acted is False
+    # no reachable peer -> abstain
+    assert run("freshness-slo", [reply("p0", None, DEFAULT, 0, reachable=False)]).acted is False

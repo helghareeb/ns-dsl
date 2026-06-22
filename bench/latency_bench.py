@@ -39,7 +39,8 @@ from nsdsl.consensus.strategy import GRADED_STRATEGIES, SCORE_PANEL_STRATEGIES  
 
 ONE_HOP = {"single-peer", "centralized", "raft-lww"}
 # The graded operator + score panels fan out to every peer, like the crisp neutro strategies.
-ALL_HOPS = {"neutro-waa", "neutro-wga", "lww-crdt", *GRADED_STRATEGIES, *SCORE_PANEL_STRATEGIES}
+ALL_HOPS = {"neutro-waa", "neutro-wga", "lww-crdt", "freshness-slo",
+            *GRADED_STRATEGIES, *SCORE_PANEL_STRATEGIES}
 MAJORITY = {"quorum-bool", "pbs-quorum"}
 LOCAL = {"naive-cache"}
 

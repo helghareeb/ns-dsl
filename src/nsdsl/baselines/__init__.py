@@ -10,6 +10,7 @@ from ..consensus.strategy import (
 from .base import DecisionParams, PeerReply, Reading, Strategy
 from .strategies import (
     centralized,
+    freshness_slo,
     lww_crdt,
     naive_cache,
     pbs_quorum,
@@ -31,6 +32,7 @@ STRATEGIES: dict[str, Strategy] = {
     "pbs-quorum": pbs_quorum,
     "raft-lww": raft_lww,
     "lww-crdt": lww_crdt,
+    "freshness-slo": freshness_slo,
     "single-peer": single_peer,
     "naive-cache": naive_cache,
 }

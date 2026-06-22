@@ -64,6 +64,25 @@ def naive_cache(replies: Sequence[PeerReply], p: DecisionParams) -> Reading:
     return Reading(True, local.value)       # acts on its own copy regardless of freshness
 
 
+def freshness_slo(replies: Sequence[PeerReply], p: DecisionParams) -> Reading:
+    """Adaptive-freshness reader (RALF/Pileus-inspired, as a decentralized per-read dual).
+
+    Acts iff the latest value the cluster has is CONFIRMED-committed: some reachable peer reports
+    PERSISTED at the maximum reachable version (a 'confirmed-latest' freshness SLO). Otherwise the
+    latest is only cached/unconfirmed and it abstains. This sits between quorum-bool (which needs a
+    majority of persisted) and lww-crdt (which serves the freshest value confirmed or not), and --
+    unlike our layer -- it collapses the (T,I,F) signal to a single confirmed-latest bit.
+    """
+    reachable = [r for r in replies if r.reachable and r.status is not DEFAULT]
+    if not reachable:
+        return Reading(False)
+    max_v = max(r.version for r in reachable)
+    confirmed_latest = [r for r in reachable if r.version == max_v and r.status == PERSISTED]
+    if not confirmed_latest:
+        return Reading(False)              # latest is unconfirmed -> freshness SLO not met
+    return pick_value(confirmed_latest)
+
+
 def pbs_quorum(replies: Sequence[PeerReply], p: DecisionParams) -> Reading:
     """Probabilistically-bounded-staleness style partial-quorum read (Bailis et al.).
 
