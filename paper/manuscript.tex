@@ -27,17 +27,19 @@ Microservices must often make business decisions over \emph{global} state---a pe
 price, a fraud flag, a clone-readiness check---while each service is sovereign over its own data
 and the only cross-service signal is a cache that may hold values that were never committed.
 A boolean fresh/stale flag collapses a decisive distinction: a value held \emph{only in cache}
-(unconfirmed) is neither ``committed'' nor ``absent.'' We implement and evaluate a decentralized
-decision layer in which every data item carries a single-valued neutrosophic triple $(T,I,F)$
-for its persistence status (persisted, cached, absent); peer services fuse their views with the
-SVNNWAA and SVNNWGA weighted-aggregation operators and a deneutrosophy score, then \emph{act} on
-a value or \emph{abstain}---with no central authority. The layer sits \emph{above} the consistency
-substrate and is \emph{not} a replication or consensus protocol. We turn a previously conceptual
-proposal into running software (a JSON DSL and rules engine parsed by ANTLR, the neutrosophic
-operators, and the decentralized decision protocol) and evaluate it on an e-commerce testbed
-across three scenarios against seven baselines, with $\geq 50$ repetitions per cell, five master
-seeds, per-operator threshold calibration on held-out workloads, Holm-corrected paired tests, and
-5000-resample bootstrap confidence intervals, plus decision latency measured on a real HTTP testbed.
+(unconfirmed) is neither ``committed'' nor ``absent.'' This paper develops a decentralized decision
+layer in which every data item carries a single-valued neutrosophic triple $(T,I,F)$ for its
+persistence status (persisted, cached, absent); peer services fuse their views with weighted
+neutrosophic aggregation operators and a deneutrosophy score, then \emph{act} on a value or
+\emph{abstain}---with no central authority. The layer sits \emph{above} the consistency substrate and
+is \emph{not} a replication or consensus protocol. The neutrosophic encoding of storage status was
+sketched conceptually in a 2020 book chapter; the contributions here are the decision protocol, its
+formal safety and liveness guarantees, an operator-and-robustness audit (a panel of aggregation
+operators over a graded confidence encoding, alternative deneutrosophy scores, equal-budget
+metaheuristic tuning, and Byzantine-robust aggregation), and a controlled evaluation on an e-commerce
+testbed across three scenarios against a panel of consistency baselines, with $\geq 50$ repetitions
+per cell, five master seeds, threshold calibration on held-out workloads, Holm-corrected paired tests,
+and 5000-resample bootstrap confidence intervals, plus decision latency measured on a real HTTP testbed.
 Every number is regenerable from committed code, a content-hashed calibration file, and a recorded seed. The neutrosophic layer occupies a Pareto
 interior between strong consistency and eventual consistency: at a $10\%$ failure-injection rate it
 reduces the stale-decision rate by $40\%$ relative to last-writer-wins, by $51\%$ relative to a
@@ -50,8 +52,8 @@ honest, reproducible trade-off.
 \end{abstract}
 
 \begin{keyword}
-microservices \sep neutrosophic sets \sep eventual consistency \sep domain-specific languages
-\sep rules engine \sep reproducible evaluation
+microservices \sep neutrosophic sets \sep data freshness \sep eventual consistency
+\sep Byzantine fault tolerance \sep decentralized decision-making \sep reproducible evaluation
 \end{keyword}
 
 \end{frontmatter}
@@ -70,33 +72,48 @@ stalls under partition~\cite{pardon2018bac,abadi2012consistency}; eventual consi
 services available but exposes them to \emph{dirty reads}---acting on a cached value that was never
 committed and will not become the truth~\cite{laigner2021data}.
 
-A 2020 book chapter~\cite{elghareeb2020neutro} proposed, conceptually, to attack this tension with
-\emph{neutrosophic} logic: annotate each data item with a triple $(T,I,F)$---truth (persisted),
-indeterminacy (cached, unconfirmed), and falsity (absent)---and let peers reach decisions by
-aggregating these triples rather than collapsing them to a bit. The proposal was never implemented
-or measured. This paper closes that gap. The key observation is that a boolean ``fresh/stale'' flag
-\emph{collapses} the indeterminacy axis: a cached-but-unconfirmed value is treated identically to an
-absent one, even though it usually carries the latest write. Retaining indeterminacy as a first-class
-quantity lets a service make a calibrated act-or-abstain decision instead of a brittle binary one.
+The difficulty is that a boolean ``fresh/stale'' flag \emph{collapses} a decisive distinction: a
+cached-but-unconfirmed value is treated identically to an absent one, even though it usually carries
+the latest write. The premise of this paper is that the axis a bit discards is \emph{indeterminacy}.
+Annotating a data item with a single-valued neutrosophic triple $(T,I,F)$---reading persisted, cached,
+and absent as truth, indeterminacy, and falsity---preserves the unconfirmed-but-present state, so that
+a service can make a calibrated act-or-abstain decision rather than a brittle binary one. The idea of
+encoding storage status as a neutrosophic triple rather than a boolean was first sketched, at a
+conceptual level, in a 2020 book chapter~\cite{elghareeb2020neutro}; that sketch left every
+operational question open---how sovereign peers should aggregate their views, what threshold warrants
+acting, how the mechanism behaves under partition or adversarial peers, and whether it improves
+decisions at all. This paper answers those questions by developing the idea into a concrete,
+decentralized decision layer with an explicit protocol, formal guarantees, and a controlled empirical
+study.
 
 \paragraph{Contributions.}
 \begin{enumerate}
-\item A working, open-source realization of the conceptual proposal: the single-valued neutrosophic
-operators (SVNNWAA, SVNNWGA, deneutrosophy score), a JSON event/rule DSL parsed by ANTLR, and a
-decentralized $(T,I,F)$-aggregating decision protocol (Section~\ref{sec:methods}).
-\item A precise, honest framing: the layer is a per-item \emph{freshness/consistency decision} layer
-that sits above the consistency substrate, \emph{not} a replication or consensus protocol; the
-apples-to-apples control is a boolean quorum (Section~\ref{sec:methods}).
-\item A reproducible evaluation on an e-commerce testbed (three scenarios, nine decision strategies
-including a probabilistically-bounded-staleness reader, a privileged ground-truth oracle) with
-held-out threshold calibration, $\geq 50$ reps/cell, five seeds, Holm correction, and bootstrap CIs;
-every number regenerable from committed artifacts (Section~\ref{sec:results}).
-\item Evidence that the layer occupies an honest Pareto interior and that the optimistic (WAA) and
-conservative (WGA) operators span a usable frontier (Sections~\ref{sec:results}--\ref{sec:discussion}).
+\item A decentralized $(T,I,F)$-aggregating decision protocol for global-state freshness: each peer
+encodes its storage status as a single-valued neutrosophic number, peers fuse their views with
+weighted neutrosophic operators and a deneutrosophy score, and a service acts or abstains with no
+central authority. The layer is a per-item freshness decision \emph{above} the consistency substrate,
+\emph{not} a replication or consensus protocol; its apples-to-apples control is a boolean quorum
+(Section~\ref{sec:methods}).
+\item Formal guarantees for the protocol: one-round termination and partition tolerance, a
+conservative-safety and an optimistic-liveness bound that bracket the act/abstain gate, and Byzantine
+gate-resistance under robust aggregation (Section~\ref{sec:formal}).
+\item A two-axis audit that tests whether the result is an artifact of design choices: an
+aggregation-operator panel (Einstein, Hamacher, Dombi, Acz\'el--Alsina, Bonferroni) over a graded
+confidence encoding, a deneutrosophy-score panel, and an equal-budget metaheuristic tuning of the
+threshold and peer weights (Section~\ref{sec:enrich}).
+\item A robustness study under an adversarial (Byzantine) failure model with median-, trimmed-mean-,
+and Krum-based robust aggregation, and a freshness-SLO baseline that makes the comparison to
+adaptive-consistency systems empirical rather than positional (Sections~\ref{sec:enrich},~\ref{sec:results}).
+\item A reproducible evaluation on an e-commerce testbed against a panel of consistency baselines
+(strong, eventual, quorum, partial-quorum) with a privileged ground-truth oracle, held-out threshold
+calibration, $\geq 50$ reps/cell, five seeds, Holm correction, and bootstrap CIs; every number
+regenerable from committed code, a content-hashed calibration file, and recorded seeds
+(Section~\ref{sec:results}).
 \end{enumerate}
 
-This work extends~\cite{elghareeb2020neutro}; all implementation, formalization, and experiments are
-new.
+For an honest delineation: the conceptual neutrosophic encoding of storage status
+originates in~\cite{elghareeb2020neutro}; the decision protocol, the formal results, the evaluation,
+and the operator, encoding, score, tuning, and robustness audits are contributions of this paper.
 
 \paragraph{Why now.} The same problem---deciding whether locally-held, possibly-stale shared state is
 trustworthy enough to act on---is surfacing across four 2024--2026 research currents: multi-agent and
@@ -168,9 +185,10 @@ pipeline.
 A single-valued neutrosophic number (SVNN) is a triple $z=(T,I,F)$ with $T,I,F\in[0,1]$ denoting
 independent truth-, indeterminacy-, and falsity-membership~\cite{wang2010svns}. We map a data item's
 storage status to canonical SVNNs: \emph{persisted} $=(1,0,0)$, \emph{cached} $=(0,1,0)$, and
-\emph{absent} $=(0,0,1)$. (The originating chapter prints the absent state as $(0,1,0)$, duplicating
-\emph{cached}; we correct it to $(0,0,1)$, since an unseen value must read as falsity, not
-indeterminacy---this matters because a missing or partitioned peer contributes the absent state.)
+\emph{absent} $=(0,0,1)$: an unseen value reads as falsity, not indeterminacy, which matters because a
+missing or partitioned peer contributes the absent state. (The early conceptual
+sketch~\cite{elghareeb2020neutro} printed absent as $(0,1,0)$, duplicating \emph{cached}; we use
+$(0,0,1)$.)
 
 Given peer views $z_1,\dots,z_n$ with normalized weights $w_j$, the SVNN weighted arithmetic and
 geometric averaging operators are
@@ -187,7 +205,7 @@ persisted peer ($T=1$) carries the decision. SVNNWGA is conservative: a single u
 peer ($T=0$) vetoes the aggregate truth.
 
 \subsection{Architecture, DSL, and rules engine}
-The testbed follows the chapter's e-commerce decomposition (products, orders, users, front-end). Each
+The testbed uses a conventional e-commerce decomposition (products, orders, users, front-end). Each
 service holds a two-tier (cache/database) store that tags every value with its $(T,I,F)$ status, and
 services exchange JSON \emph{state} and \emph{rule} messages over a lightweight event bus, never
 reading each other's stores directly. Both message kinds are the DSL: microservice logs are JSON
@@ -222,6 +240,60 @@ value a service already holds is trustworthy enough to act on.
 \EndIf
 \end{algorithmic}
 \end{algorithm}
+
+\subsection{Two-axis enrichment: operators, encoding, tuning, and adversaries}
+\label{sec:enrich}
+The submitted layer fixes one aggregation pair (Eqs.~\eqref{eq:waa}--\eqref{eq:wga}), one
+deneutrosophy score, uniform weights, and a probabilistic failure model. To test whether any of these
+choices drives the result, each is generalised into an equal-footing panel and varied one axis at a
+time; the submitted configuration is the anchor and is reproduced exactly.
+
+\paragraph{Axis A: aggregation operator.} Beyond the optimistic SVNNWAA and conservative SVNNWGA, a
+panel of single-valued neutrosophic weighted operators is evaluated: Einstein and Hamacher
+t-norm/t-conorm aggregations, the Dombi~\cite{dombi1982} and Acz\'el--Alsina~\cite{aczel1982}
+operators (each with a parameter that recovers the arithmetic mean at a limit, verified as a
+correctness check), and the Bonferroni mean, which aggregates every ordered peer pair and so captures
+interrelation that a marginal average ignores. Holding the peer evidence fixed and swapping only the
+operator isolates the effect of the aggregation rule.
+
+\paragraph{Graded encoding.} On the crisp corners the t-conorm operators coincide---any persisted
+peer forces aggregate truth to one---so the panel is separable only on graded confidence. Each peer's
+view is therefore softened by an \emph{observable} recency signal, its version lag relative to the
+most up-to-date reachable peer, requiring no oracle: a fresh persisted peer reads near $(1,0,0)$; a
+stale persisted peer shifts mass to falsity; a cached peer carries high indeterminacy that decays with
+lag; and a peer holding a lone anomalously high version is treated as a suspected dirty (uncommitted)
+write. The crisp encoding is retained as the conservative baseline, so the contrast also measures what
+graded confidence adds over a boolean status.
+
+\paragraph{Axis A$'$: deneutrosophy score.} The score $s(z)=(2+T-I-F)/3$~\cite{ye2014score} is one
+choice among several. An accuracy-degree score (truth less falsity), a cosine measure to the truth
+ideal, and a truth-weighted score are compared as a robustness ablation, to confirm that the freshness
+result does not hinge on the particular deneutrosophy.
+
+\paragraph{Axis B: weight and threshold tuning.} The hand-fit $\tau$ and uniform weights are replaced,
+in an audit arm, by tuning the full vector $[\tau, w_1,\dots,w_R]$ against the held-out calibration
+utility at an \emph{identical} evaluation budget across seven optimisers---uniform random search,
+differential evolution~\cite{storn1997de}, CMA-ES~\cite{hansen2001cmaes}, particle-swarm
+optimisation~\cite{kennedy1995pso}, a tree-structured Parzen estimator, the physics-based RIME
+optimiser~\cite{su2023rime}, and the Ninja Optimisation Algorithm~\cite{elkenawy2024nioa}. Because the
+budget, not the per-iteration mechanism, is the fair unit, the comparison asks---in the spirit of the
+No-Free-Lunch theorem~\cite{wolpert1997nfl}---whether the optimiser choice matters once compute is
+held equal. The Ninja Optimisation Algorithm has no public reference implementation and is
+reconstructed from its published structure with disclosed coefficients; it is a provisional panel
+member under test, never a hero method.
+
+\paragraph{Byzantine faults and robust aggregation.} The submitted failure model is probabilistic. An
+adversarial arm injects Byzantine peers that claim \textsc{persisted} while holding a fabricated value
+at an inflated version---the worst case for an optimistic operator and for majority value selection.
+Three robust aggregators then replace the averaging rule: the coordinate-wise median and trimmed mean,
+which tolerate a strict minority of adversarial triples~\cite{yin2018byzantine}, and
+Krum~\cite{blanchard2017krum}, which selects the peer triple closest to its neighbours.
+Section~\ref{sec:formal} bounds their resistance at the act/abstain gate; unlike PBFT-style
+agreement~\cite{castro2002pbft}, the freshness gate does not attempt cross-peer consensus on a value.
+A freshness-SLO reader---a per-read dual of adaptive-freshness schedulers~\cite{wooders2024ralf} and
+consistency-based SLAs~\cite{terry2013pileus,bailis2012pbs} that acts only when the latest value is
+confirmed-committed---is added so the adaptive-consistency line the layer is positioned against is
+compared empirically, not only in prose.
 
 \subsection{Formal properties}
 \label{sec:formal}
@@ -372,7 +444,7 @@ with events replayed; under the conservative SVNNWGA the clone drags cluster con
 until it has nearly caught up (95\% acceptance after $48$ of $50$ events), whereas under the
 optimistic SVNNWAA the established peers carry every decision at $100\%$ acceptance throughout the
 catch-up window. The operator choice thus governs the availability-vs-strictness behavior precisely
-during the ``White Friday'' scaling event the chapter motivates.
+during the ``White Friday'' load-spike scenario (S3).
 
 \paragraph{Significance.} Table~\ref{tab:significance} lists the headline paired contrasts with
 Holm-corrected $p$-values and effect sizes; all are significant after correction, with large effect
@@ -464,10 +536,10 @@ families; cross-seed non-replication ($3\%$ of cells) is flagged and excluded fr
 \section{Conclusion}
 \label{sec:conclusion}
 
-We turned a conceptual neutrosophic proposal for microservice global state into running, measured
-software and showed---reproducibly---that encoding persistence as a $(T,I,F)$ triple and fusing peer
-views with weighted neutrosophic operators yields a decision layer on the Pareto interior between
-strong and eventual consistency: markedly fewer stale decisions than eventual-consistency baselines,
+We developed a decentralized neutrosophic decision layer for microservice global-state freshness---a
+protocol, formal safety and liveness guarantees, and a reproducible evaluation---and showed that
+encoding persistence as a $(T,I,F)$ triple and fusing peer views with weighted neutrosophic operators
+yields a decision layer on the Pareto interior between strong and eventual consistency: markedly fewer stale decisions than eventual-consistency baselines,
 sustained availability under partition where a strongly-consistent primary stalls, and a clear
 advantage over a boolean quorum that isolates the value of the indeterminacy axis. We claim no
 superiority over consensus protocols; the contribution is an honest, calibrated, fully reproducible
