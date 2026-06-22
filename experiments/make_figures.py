@@ -35,12 +35,13 @@ def fig_stale_vs_phi(df: pd.DataFrame, scenario: str = "S2") -> None:
         s = sub[sub.system == system].sort_values("failure_inject_phi")
         if s.empty:
             continue
-        ax.plot(s.failure_inject_phi, s.stale_rate, marker="o", label=system)
+        ls = "--" if system == "raft-lww" else "-"   # raft-lww coincides with centralized at 0; dash reveals both
+        ax.plot(s.failure_inject_phi, s.stale_rate, marker="o", linestyle=ls, label=system)
         ax.fill_between(s.failure_inject_phi, s.stale_ci_lo, s.stale_ci_hi, alpha=0.12)
     ax.set_xlabel("failure-injection rate $\\varphi$")
     ax.set_ylabel("stale-decision rate (acted)")
     ax.set_title(f"Stale-decision rate vs. failure rate ({scenario})")
-    ax.legend(fontsize=7, ncol=2)
+    ax.legend(fontsize=7, loc="center left", bbox_to_anchor=(1.02, 0.5))   # outside axes: never over data
     _save(fig, "f2_stale_vs_phi")
 
 
@@ -48,17 +49,22 @@ def fig_pareto(df: pd.DataFrame, scenario: str = "S2", phi: float = 0.1) -> None
     sub = df[(df.scenario == scenario) & (df.partition == "none")
              & (df.failure_inject_phi == phi)].set_index("system")
     fig, ax = plt.subplots(figsize=(6.5, 4.2))
-    markers = {"neutro-waa": "*", "neutro-wga": "*"}
+    # distinct marker SHAPE per system so coincident points (centralized==raft-lww at (0,0.9)) layer visibly
+    markers = {"centralized": "o", "raft-lww": "X", "neutro-waa": "*", "neutro-wga": "P",
+               "quorum-bool": "s", "pbs-quorum": "D", "lww-crdt": "v", "single-peer": "^",
+               "naive-cache": "d"}
     for sysname in ORDER:
         if sysname not in sub.index:
             continue
         r = sub.loc[sysname]
-        ax.scatter(r.stale_rate, r.availability, s=140 if sysname.startswith("neutro") else 60,
-                   marker=markers.get(sysname, "o"), label=sysname, zorder=3)
+        big = sysname.startswith("neutro")
+        size = 200 if big else (130 if sysname == "centralized" else 70)   # centralized larger so it peeks out under raft-lww 'X'
+        ax.scatter(r.stale_rate, r.availability, s=size, marker=markers.get(sysname, "o"),
+                   edgecolors="black", linewidths=0.5, label=sysname, zorder=3)
     ax.set_xlabel("stale-decision rate (lower is better)")
     ax.set_ylabel("availability (higher is better)")
     ax.set_title(f"Correctness/availability trade-off ({scenario}, $\\varphi$={phi})")
-    ax.legend(fontsize=7, ncol=2, loc="lower left")
+    ax.legend(fontsize=7, loc="center left", bbox_to_anchor=(1.02, 0.5))   # outside axes: never over data
     ax.grid(True, alpha=0.2)
     _save(fig, "f3_pareto")
 
@@ -97,7 +103,7 @@ def fig_availability_partition(df: pd.DataFrame, scenario: str = "S2", phi: floa
     ax.set_xticklabels(systems, rotation=20, fontsize=8)
     ax.set_ylabel("availability")
     ax.set_title(f"Availability under partition ({scenario}, $\\varphi$={phi})")
-    ax.legend(fontsize=8)
+    ax.legend(fontsize=8, loc="center left", bbox_to_anchor=(1.02, 0.5))   # outside axes: never over bars
     _save(fig, "f7_availability_partition")
 
 
@@ -106,11 +112,12 @@ def fig_signal_richness(df: pd.DataFrame, phi: float = 0.1) -> None:
     sub = df[(df.partition == "none") & (df.failure_inject_phi == phi)
              & (df.system == "neutro-waa")].sort_values("scenario")
     fig, ax = plt.subplots(figsize=(5.5, 3.6))
-    ax.bar(sub.scenario, sub.neutro_bool_disagree, width=0.5, label="neutro vs.\\ boolean disagreement")
+    ax.bar(sub.scenario, sub.neutro_bool_disagree, width=0.5, label="neutro vs. boolean disagreement")
     ax.plot(sub.scenario, sub.i_occupancy, "o--", color="C1", label="mean indeterminacy (cache) occupancy")
     ax.set_ylabel("fraction of decisions")
+    ax.set_ylim(0, 0.75)
     ax.set_title(f"Signal richness of the $(T,I,F)$ axis ($\\varphi={phi}$)")
-    ax.legend(fontsize=8)
+    ax.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=2)   # below axes: never over bars
     _save(fig, "f8_signal_richness")
 
 
@@ -127,11 +134,13 @@ def fig_latency_measured() -> None:
         sub = d[d.rtt_ms == rtt].set_index("system")
         xs = [i + (k - len(rtts) / 2) * width for i in range(len(systems))]
         ax.bar(xs, [sub.p50_ms.get(s, 0) for s in systems], width=width, label=f"RTT={rtt:g}ms")
+    ax.set_yscale("log")                       # naive-cache is a local read (~0.02 ms); dwarfed otherwise
+    ax.set_ylim(bottom=0.01)
     ax.set_xticks(range(len(systems)))
     ax.set_xticklabels(systems, rotation=20, fontsize=8)
-    ax.set_ylabel("measured decision latency p50 (ms)")
+    ax.set_ylabel("measured decision latency p50 (ms, log scale)")
     ax.set_title("Measured latency on the real HTTP testbed (localhost)")
-    ax.legend(fontsize=8)
+    ax.legend(fontsize=8, loc="center left", bbox_to_anchor=(1.02, 0.5))   # outside axes: never over bars
     _save(fig, "f5_latency_measured")
 
 
@@ -161,13 +170,16 @@ def fig_s3_convergence() -> None:
         return
     d = pd.read_csv(path)
     fig, ax = plt.subplots(figsize=(6, 4))
-    ax.plot(d.events_replayed, d.recovery_fraction, marker=".", label="state recovered")
-    ax.plot(d.events_replayed, d.wga_accept_rate, marker=".", label="cluster accept (SVNNWGA)")
-    ax.plot(d.events_replayed, d.waa_accept_rate, marker=".", label="cluster accept (SVNNWAA)")
+    # recovery_fraction and wga_accept_rate coincide (WGA accepts exactly when the clone is recovered);
+    # distinct linestyles/widths so all three series are visible
+    ax.plot(d.events_replayed, d.recovery_fraction, "-", lw=3.5, alpha=0.55, color="C0", label="state recovered")
+    ax.plot(d.events_replayed, d.wga_accept_rate, "--", lw=1.6, color="C1", label="cluster accept (SVNNWGA)")
+    ax.plot(d.events_replayed, d.waa_accept_rate, ":", lw=2.2, color="C2", label="cluster accept (SVNNWAA)")
     ax.set_xlabel("log events replayed by the fresh clone")
     ax.set_ylabel("fraction")
+    ax.set_ylim(-0.05, 1.08)
     ax.set_title("S3 clone catch-up via log replay")
-    ax.legend(fontsize=8)
+    ax.legend(fontsize=8, loc="lower right")   # empty corner: below the rising diagonal
     _save(fig, "f9_s3_convergence")
 
 

@@ -576,7 +576,8 @@ sizes for the comparisons against eventual consistency and the availability gain
 \begin{figure}[t]\centering
 \includegraphics[width=0.7\linewidth]{f3_pareto.pdf}
 \caption{Correctness/availability trade-off (S2, $\varphi=0.1$). Up-and-left is better; neutro-waa is
-on the Pareto frontier.}\label{fig:pareto}\end{figure}
+on the Pareto frontier. Each system has a distinct marker; the strongly-consistent baselines centralized
+and raft-lww coincide at $(0,0.90)$ (circle behind cross).}\label{fig:pareto}\end{figure}
 
 \begin{figure}[t]\centering
 \includegraphics[width=0.7\linewidth]{f7_availability_partition.pdf}
@@ -591,7 +592,8 @@ boolean quorum on a substantial fraction of decisions.}\label{fig:signal}\end{fi
 \begin{figure}[t]\centering
 \includegraphics[width=0.8\linewidth]{f5_latency_measured.pdf}
 \caption{Measured median decision latency on the real localhost HTTP testbed: local read, single
-round-trip, and $R$-peer fan-out tiers.}\label{fig:latency}\end{figure}
+round-trip, and $R$-peer fan-out tiers. Log scale: naive-cache is a local read ($\approx0.02$\,ms),
+dwarfed by the network tiers but fully measured ($n=200$ per cell).}\label{fig:latency}\end{figure}
 
 \begin{figure}[t]\centering
 \includegraphics[width=0.95\linewidth]{f6_sensitivity.pdf}
@@ -601,7 +603,8 @@ round-trip, and $R$-peer fan-out tiers.}\label{fig:latency}\end{figure}
 \begin{figure}[t]\centering
 \includegraphics[width=0.7\linewidth]{f9_s3_convergence.pdf}
 \caption{S3: a fresh clone recovers state by replaying the log; SVNNWGA acceptance trails until
-catch-up while SVNNWAA stays available throughout.}\label{fig:s3}\end{figure}
+catch-up while SVNNWAA stays available throughout. State-recovery and SVNNWGA acceptance coincide
+(dashed line over the thick one).}\label{fig:s3}\end{figure}
 
 \begin{figure}[t]\centering
 \includegraphics[width=0.8\linewidth]{f10_throughput.pdf}
