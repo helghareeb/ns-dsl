@@ -21,7 +21,10 @@ _MAJORITY = {"quorum-bool", "pbs-quorum"}
 
 
 def messages_per_decision(system: str, replicas: int) -> int:
-    if system in {"neutro-waa", "neutro-wga", "quorum-bool", "lww-crdt"}:
+    # All neutrosophic strategies (crisp + the graded operator/score/robust panels) and the
+    # all-peer baselines fan out to every replica; pbs is a partial quorum; the single-node
+    # strategies cost one message and the local read none.
+    if system.startswith("neutro-") or system in {"quorum-bool", "lww-crdt", "freshness-slo"}:
         return replicas
     if system == "pbs-quorum":
         return replicas // 2 + 1            # partial quorum
