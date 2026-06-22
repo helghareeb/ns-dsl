@@ -11,12 +11,20 @@ No other script computes statistics.
 from __future__ import annotations
 
 import glob
+import hashlib
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy import stats
 from statsmodels.stats.multitest import multipletests
+
+
+def _cell_seed(scenario: str, system: str, phi, partition: str) -> int:
+    """Deterministic per-cell bootstrap seed (stable across Python runs and independent of which/
+    how many systems are in the run), so the bootstrap CIs are byte-reproducible (R1/R5)."""
+    key = f"{scenario}|{system}|{phi}|{partition}".encode()
+    return int.from_bytes(hashlib.sha256(key).digest()[:8], "big") % (2**32)
 
 from .calibration import load_calibration
 
@@ -52,10 +60,10 @@ def _bootstrap_ci(values: np.ndarray, n_boot: int, rng: np.random.Generator,
 def summarize(df: pd.DataFrame, calibration: dict) -> pd.DataFrame:
     n_boot = calibration["bootstrap_resamples"]
     gate = calibration["failure_rate_gate"]
-    rng = np.random.default_rng(12345)
     rows = []
     for keys, cell in df.groupby(CELL_KEYS, sort=True):
         scenario, system, phi, partition = keys
+        rng = np.random.default_rng(_cell_seed(scenario, system, phi, partition))
         stale = cell["stale_rate"].to_numpy(float)
         avail = cell["availability"].to_numpy(float)
         fail = cell["failure_rate"].mean()
