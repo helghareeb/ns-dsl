@@ -7,6 +7,8 @@
 \usepackage[strings]{underscore} % let underscores in DOIs render in the bibliography
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
 \graphicspath{{../results/figures/}}
 
 \journal{Information Sciences}
@@ -177,9 +179,62 @@ experiments~\cite{papadopoulos2021reproducible}: multiple repetitions and seeds,
 confidence intervals, multiple-comparison correction, and a content-hashed, single-aggregator
 pipeline.
 
+Table~\ref{tab:related} positions this work against the prior families. The distinguishing axis is the
+\emph{freshness signal}: prior readers collapse it to a Boolean (committed or not), a single staleness
+probability, or a centralized SLO, whereas the layer here carries a fused three-valued
+$(T,I,F)$ provenance, decentrally, with an explicit abstain option and Byzantine-robust variants.
+
+\begin{table}[t]
+\centering
+\caption{Where the neutrosophic freshness layer sits relative to prior approaches to global-state
+reads. ``Abstain'' = can decline to act under uncertainty; ``Decentralized'' = no coordinating leader.}
+\label{tab:related}
+\small
+\begin{tabular}{@{}llccc@{}}
+\toprule
+Approach & Freshness signal & Abstain & Byz. & Decentralized \\
+\midrule
+Strong consistency (Raft/Paxos)~\cite{ongaro2014raft,lamport1998paxos} & committed (serialized) & no & via PBFT & no \\
+Eventual / LWW CRDT~\cite{shapiro2011crdt} & none (serve latest) & no & no & yes \\
+Bounded staleness (PBS)~\cite{bailis2012pbs} & one probability & no & no & quorum \\
+Consistency SLA (Pileus)~\cite{terry2013pileus} & per-read SLO & no & no & no \\
+Feature-freshness scheduler (RALF)~\cite{wooders2024ralf} & centralized regret & no & no & no \\
+Boolean quorum (control) & 1 bit (fresh/stale) & yes & no & yes \\
+\textbf{This work} & \textbf{$(T,I,F)$ triple} & \textbf{yes} & \textbf{median/Krum} & \textbf{yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 %====================================================================
 \section{Methods}
 \label{sec:methods}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[>={Stealth[length=2.2mm]}, font=\footnotesize,
+  svc/.style={draw,rounded corners,fill=blue!6,minimum width=22mm,minimum height=11mm,align=center},
+  op/.style={draw,rounded corners,fill=gray!12,minimum width=20mm,minimum height=9mm,align=center},
+  out/.style={draw,rounded corners,fill=green!14,minimum width=30mm,minimum height=9mm,align=center}]
+  \node[draw,fill=orange!14,minimum width=84mm,minimum height=6mm] (bus)
+       {event bus: JSON \emph{state}/\emph{rule} messages (DSL, ANTLR-parsed)};
+  \node[svc,below=10mm of bus] (p2) {Peer $p_2$\\cache\,/\,DB $\to(T,I,F)$};
+  \node[svc,left=10mm of p2] (p1) {Peer $p_1$\\cache\,/\,DB $\to(T,I,F)$};
+  \node[svc,right=10mm of p2] (pn) {Peer $p_n$\\cache\,/\,DB $\to(T,I,F)$};
+  \foreach \p in {p1,p2,pn} \draw[<->] (\p.north) -- (\p.north|-bus.south);
+  \node[op,below=12mm of p2] (agg) {Aggregate $\oplus$};
+  \node[op,right=8mm of agg] (sc) {Score $s$};
+  \node[out,right=8mm of sc] (gate) {Act\,/\,Abstain ($s\!\ge\!\tau$)};
+  \foreach \p in {p1,p2,pn} \draw[->] (\p) -- (agg);
+  \draw[->] (agg) -- (sc); \draw[->] (sc) -- (gate);
+  \node[font=\scriptsize,left=1mm of agg.north west,anchor=south east] {$(T,I,F)$ views};
+\end{tikzpicture}
+\caption{The decentralized neutrosophic decision layer. Sovereign peers exchange JSON state/rule
+messages over an event bus and tag each value's storage status as a single-valued neutrosophic number;
+a deciding service fuses the reachable peers' $(T,I,F)$ views with an aggregation operator,
+deneutrosophizes to a score $s$, and acts on a value or abstains against a calibrated threshold
+$\tau$---with no central authority.}
+\label{fig:system}
+\end{figure}
 
 \subsection{Neutrosophic preliminaries}
 A single-valued neutrosophic number (SVNN) is a triple $z=(T,I,F)$ with $T,I,F\in[0,1]$ denoting
@@ -263,7 +318,25 @@ most up-to-date reachable peer, requiring no oracle: a fresh persisted peer read
 stale persisted peer shifts mass to falsity; a cached peer carries high indeterminacy that decays with
 lag; and a peer holding a lone anomalously high version is treated as a suspected dirty (uncommitted)
 write. The crisp encoding is retained as the conservative baseline, so the contrast also measures what
-graded confidence adds over a boolean status.
+graded confidence adds over a boolean status. Algorithm~\ref{alg:grade} states the encoding from the
+observable versions alone.
+
+\begin{algorithm}[t]
+\caption{Graded confidence encoding from observable version lag}
+\label{alg:grade}
+\begin{algorithmic}[1]
+\Require reachable peer views $P$ with versions; lag scale $\sigma$
+\State $v_{\max}\gets \max_{p\in P}\mathrm{ver}(p)$;\quad $v_{2}\gets$ second-largest version in $P$
+\For{$p\in P$}
+  \State $\ell \gets v_{\max}-\mathrm{ver}(p)$ \Comment{relative lag; no oracle}
+  \State $\phi \gets 1/(1+\ell/\sigma)$ \Comment{freshness: $1$ at $\ell{=}0$, $\to 0$ as $\ell$ grows}
+  \State $\mathit{dirty}\gets [\,\mathrm{ver}(p)>v_{2}\,\wedge\,\mathrm{status}(p)=\textsc{cached}\,]$ \Comment{lone high version}
+  \State $z_p\gets \textsc{Grade}(\mathrm{status}(p),\phi,\mathit{dirty})$ \Comment{$\to(T,I,F)$, Sec.~\ref{sec:enrich}}
+\EndFor
+\State unreachable peers contribute $\textsc{Grade}(\textsc{absent},\cdot,\cdot)$
+\State \Return $\{z_p\}$
+\end{algorithmic}
+\end{algorithm}
 
 \paragraph{Axis A$'$: deneutrosophy score.} The score $s(z)=(2+T-I-F)/3$~\cite{ye2014score} is one
 choice among several. An accuracy-degree score (truth less falsity), a cosine measure to the truth
@@ -293,7 +366,21 @@ agreement~\cite{castro2002pbft}, the freshness gate does not attempt cross-peer 
 A freshness-SLO reader---a per-read dual of adaptive-freshness schedulers~\cite{wooders2024ralf} and
 consistency-based SLAs~\cite{terry2013pileus,bailis2012pbs} that acts only when the latest value is
 confirmed-committed---is added so the adaptive-consistency line the layer is positioned against is
-compared empirically, not only in prose.
+compared empirically, not only in prose. Algorithm~\ref{alg:robust} states the robust gate.
+
+\begin{algorithm}[t]
+\caption{Byzantine-robust freshness gate}
+\label{alg:robust}
+\begin{algorithmic}[1]
+\Require graded views $Z=\{z_p\}$; threshold $\tau$; rule $\rho\in\{\textsc{median},\textsc{trimmed},\textsc{krum}\}$; assumed adversaries $f$
+\If{$\rho=\textsc{median}$} \State $\bar z\gets$ coordinate-wise median of $Z$
+\ElsIf{$\rho=\textsc{trimmed}$} \State $\bar z\gets$ coordinate-wise mean of $Z$ after dropping the $f$ smallest and $f$ largest per axis
+\ElsIf{$\rho=\textsc{krum}$} \State $\bar z\gets \arg\min_{z\in Z}\ \textstyle\sum$ of squared distances from $z$ to its $|Z|-f-2$ nearest views
+\EndIf
+\State $s\gets(2+\bar z.T-\bar z.I-\bar z.F)/3$
+\State \Return \textsc{Act} on the persisted-majority value \textbf{if} $s\ge\tau$ \textbf{else} \textsc{Abstain}
+\end{algorithmic}
+\end{algorithm}
 
 \subsection{Formal properties}
 \label{sec:formal}
