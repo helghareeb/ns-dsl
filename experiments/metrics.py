@@ -30,10 +30,11 @@ def messages_per_decision(system: str, replicas: int) -> int:
     return 1
 
 
-def _params(system: str, inst: DecisionInstance, tau: float):
+def _params(system: str, inst: DecisionInstance, tau: float,
+            weights: dict[str, float] | None = None):
     return DecisionParams(
         tau=tau, decider_id=DECIDER_ID, authority_id=AUTHORITY_ID,
-        leader_id=AUTHORITY_ID, pick_index=inst.pick_index,
+        leader_id=AUTHORITY_ID, pick_index=inst.pick_index, weights=weights,
     )
 
 
@@ -61,12 +62,13 @@ def _latency(system: str, inst: DecisionInstance, local_ms: float) -> float:
 
 
 def evaluate_trial(system: str, instances: Sequence[DecisionInstance], *,
-                   tau: float, replicas: int, local_ms: float) -> dict:
+                   tau: float, replicas: int, local_ms: float,
+                   weights: dict[str, float] | None = None) -> dict:
     n = len(instances)
     n_acted = n_stale = 0
     latencies: list[float] = []
     for inst in instances:
-        reading = STRATEGIES[system](_replies(system, inst), _params(system, inst, tau))
+        reading = STRATEGIES[system](_replies(system, inst), _params(system, inst, tau, weights))
         if not reading.acted:
             continue
         n_acted += 1
