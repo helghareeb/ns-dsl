@@ -1,0 +1,46 @@
+# Emulated-WAN testbed (Bucket D'): the R peer services behind a Toxiproxy proxy that injects
+# per-link latency, jitter, and probabilistic loss. Real HTTP over real (proxied) sockets on a SINGLE
+# host -- NOT geo-distributed: containers share the host CPU/NIC, so absolute throughput is host-bound,
+# but the per-link conditions and the measured decision-latency TAILS are on real network paths. The
+# reviewer-cited Toxiproxy is the sole latency source (peers run with RTT_MS=0).
+#
+# Run:  docker compose -f docker/docker-compose.wan.yml up -d --build
+#       PYTHONPATH=src:. python -m bench.wan_latency
+#       docker compose -f docker/docker-compose.wan.yml down
+services:
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.9.0
+    command: ["-host", "0.0.0.0"]
+    ports:
+      - "8474:8474"            # control API
+      - "18000:18000"
+      - "18001:18001"
+      - "18002:18002"
+      - "18003:18003"
+      - "18004:18004"
+      - "18005:18005"
+      - "18006:18006"
+      - "18007:18007"
+      - "18008:18008"
+      - "18009:18009"
+      - "18010:18010"
+    depends_on: [peer0, peer1, peer2, peer3, peer4]
+
+  redis:
+    image: redis:7
+
+  peer0:
+    build: { context: .., dockerfile: docker/Dockerfile.service }
+    environment: { PEER_ID: p0, RTT_MS: "0" }
+  peer1:
+    build: { context: .., dockerfile: docker/Dockerfile.service }
+    environment: { PEER_ID: p1, RTT_MS: "0" }
+  peer2:
+    build: { context: .., dockerfile: docker/Dockerfile.service }
+    environment: { PEER_ID: p2, RTT_MS: "0" }
+  peer3:
+    build: { context: .., dockerfile: docker/Dockerfile.service }
+    environment: { PEER_ID: p3, RTT_MS: "0" }
+  peer4:
+    build: { context: .., dockerfile: docker/Dockerfile.service }
+    environment: { PEER_ID: p4, RTT_MS: "0" }
