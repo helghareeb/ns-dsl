@@ -189,6 +189,7 @@ $(T,I,F)$ provenance, decentrally, with an explicit abstain option and Byzantine
 reads. ``Abstain'' = can decline to act under uncertainty; ``Decentralized'' = no coordinating leader.}
 \label{tab:related}
 \small
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tabular}{@{}llccc@{}}
 \toprule
 Approach & Freshness signal & Abstain & Byz. & Decentralized \\
@@ -201,7 +202,7 @@ Feature-freshness scheduler (RALF)~\cite{wooders2024ralf} & centralized regret &
 Boolean quorum (control) & 1 bit (fresh/stale) & yes & no & yes \\
 \textbf{This work} & \textbf{$(T,I,F)$ triple} & \textbf{yes} & \textbf{median/Krum} & \textbf{yes} \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 %====================================================================
@@ -210,6 +211,7 @@ Boolean quorum (control) & 1 bit (fresh/stale) & yes & no & yes \\
 
 \begin{figure}[t]
 \centering
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tikzpicture}[>={Stealth[length=2.2mm]}, font=\footnotesize,
   svc/.style={draw,rounded corners,fill=blue!6,minimum width=22mm,minimum height=11mm,align=center},
   op/.style={draw,rounded corners,fill=gray!12,minimum width=20mm,minimum height=9mm,align=center},
@@ -226,7 +228,7 @@ Boolean quorum (control) & 1 bit (fresh/stale) & yes & no & yes \\
   \foreach \p in {p1,p2,pn} \draw[->] (\p) -- (agg);
   \draw[->] (agg) -- (sc); \draw[->] (sc) -- (gate);
   \node[font=\scriptsize,left=1mm of agg.north west,anchor=south east] {$(T,I,F)$ views};
-\end{tikzpicture}
+\end{tikzpicture}}
 \caption{The decentralized neutrosophic decision layer. Sovereign peers exchange JSON state/rule
 messages over an event bus and tag each value's storage status as a single-valued neutrosophic number;
 a deciding service fuses the reachable peers' $(T,I,F)$ views with an aggregation operator,
@@ -305,6 +307,7 @@ shows the audit pipeline.
 
 \begin{figure}[t]
 \centering
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
 \begin{tikzpicture}[>={Stealth[length=2.2mm]}, font=\footnotesize,
   st/.style={draw,rounded corners,fill=blue!6,align=center,minimum height=10mm,minimum width=16mm},
   ax/.style={draw,rounded corners,fill=gray!12,align=center,minimum height=13mm,minimum width=25mm},
@@ -319,7 +322,7 @@ shows the audit pipeline.
   \node[tn,below=11mm of opA] (mh) {\textbf{Axis B}: equal-budget metaheuristic tuner\\GA, DE, CMA-ES, PSO, TPE, RIME, Ninja $\to(\tau,w)$};
   \draw[->] (mh.north) -- (opA.south);
   \draw[->] (mh.east) -| (gate.south);
-\end{tikzpicture}
+\end{tikzpicture}}
 \caption{The two-axis audit pipeline. Peer views are encoded (crisp anchor or graded), aggregated by
 an operator-panel member (Axis~A), deneutrosophized by a score-panel member (Axis~A$'$), and gated at
 the calibrated threshold; an equal-budget metaheuristic panel (Axis~B) tunes the threshold and peer
