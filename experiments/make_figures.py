@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SUMMARY = ROOT / "results" / "tables" / "per_config_summary.csv"
 FIGDIR = ROOT / "results" / "figures"
 
-ORDER = ["centralized", "raft-lww", "neutro-waa", "neutro-wga", "quorum-bool",
+ORDER = ["centralized", "raft-lww", "neutro-waa", "neutro-wga", "quorum-bool", "prob-gate",
          "pbs-quorum", "lww-crdt", "single-peer", "naive-cache"]
 
 
@@ -51,8 +51,8 @@ def fig_pareto(df: pd.DataFrame, scenario: str = "S2", phi: float = 0.1) -> None
     fig, ax = plt.subplots(figsize=(6.5, 4.2))
     # distinct marker SHAPE per system so coincident points (centralized==raft-lww at (0,0.9)) layer visibly
     markers = {"centralized": "o", "raft-lww": "X", "neutro-waa": "*", "neutro-wga": "h",
-               "quorum-bool": "s", "pbs-quorum": "D", "lww-crdt": "v", "single-peer": "^",
-               "naive-cache": "d"}
+               "quorum-bool": "s", "prob-gate": "p", "pbs-quorum": "D", "lww-crdt": "v",
+               "single-peer": "^", "naive-cache": "d"}
     for sysname in ORDER:
         if sysname not in sub.index:
             continue

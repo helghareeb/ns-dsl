@@ -584,13 +584,16 @@ a service---records the totally ordered commits and reconstructs the true global
 time. A decision is \emph{stale} iff the value acted on differs from the oracle's true value.
 
 \subsection{Baselines}
-We compare seven decision strategies on identical decision streams: our \textbf{neutro-waa} and
+We compare eight decision strategies on identical decision streams: our \textbf{neutro-waa} and
 \textbf{neutro-wga}; \emph{centralized} (a strongly-consistent authority---the correctness ceiling);
 \emph{raft-lww} (a leader's committed value); \emph{quorum-bool} (majority vote over boolean
 fresh/stale flags---the apples-to-apples control that isolates the value of $(T,I,F)$ vs.\ a bit);
-\emph{pbs-quorum} (a probabilistically-bounded-staleness partial-quorum reader~\cite{bailis2012pbs},
-the nearest prior art); \emph{lww-crdt} (eventually consistent last-writer-wins); \emph{single-peer};
-and \emph{naive-cache} (local read, no coordination---the floor).
+\emph{prob-gate} (a calibrated single-probability gate that collapses the same evidence into one
+Bayesian freshness posterior $p=(a{+}1)/(a{+}b{+}2)$ and acts iff $p\ge\tau$---the sharper control that
+isolates $(T,I,F)$ vs.\ a single scalar); \emph{pbs-quorum} (a probabilistically-bounded-staleness
+partial-quorum reader~\cite{bailis2012pbs}, the nearest prior art); \emph{lww-crdt} (eventually
+consistent last-writer-wins); \emph{single-peer}; and \emph{naive-cache} (local read, no
+coordination---the floor).
 
 \subsection{Experimental design and statistics}
 Each cell is $(\text{scenario},\text{system},\varphi,\text{partition})$ at $R=5$ replicas, cache
@@ -654,6 +657,22 @@ its zero staleness, and every full-availability baseline is far staler.
 most decisions ($0.402$ availability at $\varphi=0.1$, S2); neutro-waa attains comparable correctness
 at $0.942$ availability---roughly $2.3\times$. This isolates the contribution: retaining $(T,I,F)$
 rather than a boolean flag converts indeterminacy into available, correct decisions.
+
+\paragraph{RQ2 vs.\ a single-probability control: is $(T,I,F)$ a relabelled probability?} A one-bit
+quorum is an easy control; the sharper test is a \emph{calibrated single-probability} gate (prob-gate)
+that collapses the same evidence into one Bayesian freshness posterior and acts when it clears $\tau$.
+prob-gate is a strong baseline---far above the boolean quorum (availability $0.998$ vs.\ $0.402$ at S2,
+$\varphi=0.1$)---and is \emph{not} dominated by the neutrosophic layer: on S1 the two are near-identical
+($0.136$ vs.\ $0.137$ stale at full availability), and on S2 prob-gate trades $2.8$ percentage points
+more staleness ($0.263$ vs.\ neutro-waa-g's $0.235$) for $6.9$ points more availability ($0.998$ vs.\
+$0.929$). We therefore make the honest claim, not the convenient one: $(T,I,F)$ does \emph{not} beat a
+calibrated scalar on the headline trade-off---but it is not a mere relabelling either. Calibrated for the
+asymmetric cost, the single scalar collapses toward ``act on almost everything'' ($0.998$ availability),
+whereas the indeterminacy axis lets the layer \emph{selectively abstain} on genuinely-unconfirmed
+decisions, and the operator/score/threshold family spans the whole frontier
+(Figure~\ref{fig:operator}) that one calibrated point cannot. The value of the three-valued encoding is
+representational---frontier control and an interpretable separation of indeterminacy from falsity---not a
+uniform accuracy win over a strong scalar.
 
 \paragraph{RQ5: operator ablation.} SVNNWGA is the conservative operator: lower stale-rate (e.g.\ S3
 transient: $0.226$ vs.\ $0.288$) at much lower availability ($0.276$ vs.\ $0.993$). WAA and WGA thus
