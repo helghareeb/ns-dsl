@@ -24,7 +24,7 @@ def messages_per_decision(system: str, replicas: int) -> int:
     # All neutrosophic strategies (crisp + the graded operator/score/robust panels) and the
     # all-peer baselines fan out to every replica; pbs is a partial quorum; the single-node
     # strategies cost one message and the local read none.
-    if system.startswith("neutro-") or system in {"quorum-bool", "lww-crdt", "freshness-slo"}:
+    if system.startswith("neutro-") or system in {"quorum-bool", "lww-crdt", "freshness-slo", "prob-gate"}:
         return replicas
     if system == "pbs-quorum":
         return replicas // 2 + 1            # partial quorum

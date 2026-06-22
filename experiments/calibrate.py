@@ -23,9 +23,10 @@ from .workload import generate_trial
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "results" / "tables" / "tau_fit.csv"
 
-#: Every strategy that consumes the score>=tau gate (the submitted crisp pair + the Axis-A graded
-#: operator/robust panel + the Axis-A' score panel). The non-neutro baselines ignore tau.
-NEUTRO_SYSTEMS = [name for name in STRATEGIES if name.startswith("neutro-")]
+#: Every strategy that consumes the score>=tau gate: the submitted crisp pair, the Axis-A graded
+#: operator/robust panel, the Axis-A' score panel, and the Bayesian single-probability gate baseline
+#: (prob-gate, a tau-gated control). The other baselines ignore tau.
+NEUTRO_SYSTEMS = [name for name in STRATEGIES if name.startswith("neutro-")] + ["prob-gate"]
 
 
 def _calibration_trials(scenario: str, cal: dict) -> list:

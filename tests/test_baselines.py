@@ -19,7 +19,7 @@ def run(name, replies, **kw):
 def test_registry_has_all_strategies():
     from nsdsl.consensus.strategy import GRADED_STRATEGIES, SCORE_PANEL_STRATEGIES
     base = {
-        "neutro-waa", "neutro-wga", "centralized", "quorum-bool", "pbs-quorum",
+        "neutro-waa", "neutro-wga", "centralized", "quorum-bool", "prob-gate", "pbs-quorum",
         "raft-lww", "lww-crdt", "freshness-slo", "single-peer", "naive-cache",
     }
     assert set(STRATEGIES) == base | set(GRADED_STRATEGIES) | set(SCORE_PANEL_STRATEGIES)

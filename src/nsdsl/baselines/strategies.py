@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from ..neutro.states import DEFAULT, PERSISTED
+from ..neutro.states import CACHED, DEFAULT, PERSISTED
 from .base import DecisionParams, PeerReply, Reading, by_id, pick_value
 
 
@@ -81,6 +81,38 @@ def freshness_slo(replies: Sequence[PeerReply], p: DecisionParams) -> Reading:
     if not confirmed_latest:
         return Reading(False)              # latest is unconfirmed -> freshness SLO not met
     return pick_value(confirmed_latest)
+
+
+def prob_gate(replies: Sequence[PeerReply], p: DecisionParams) -> Reading:
+    """Bayesian single-probability freshness gate -- ablation for the $(T,I,F)$ encoding.
+
+    Collapses each reachable peer's status to scalar evidence and forms ONE posterior probability that
+    the served value is committed-fresh: $p=(a+1)/(a+b+2)$, the mean of a $\\mathrm{Beta}(1,1)$-Bernoulli
+    posterior, where a PERSISTED peer contributes $a{+}{=}1$, a reachable-but-absent (DEFAULT) peer
+    $b{+}{=}1$, and a CACHED/unconfirmed peer is split $0.5/0.5$ -- a single probability cannot separate
+    'cached-but-fresh' from 'cached-and-stale'. Acts iff $p\\ge\\tau$ on the persisted-majority value
+    (else the reachable majority). With one degree of freedom it cannot hold indeterminacy ($I$) apart
+    from falsity ($F$), which is exactly the freedom the $(T,I,F)$ layer uses; this baseline tests
+    whether the three-valued encoding is more than a relabelled probability.
+    """
+    responding = [r for r in replies if r.reachable]
+    if not responding:
+        return Reading(False)
+    a = b = 0.0
+    for r in responding:
+        if r.status == PERSISTED:
+            a += 1.0
+        elif r.status == CACHED:
+            a += 0.5
+            b += 0.5
+        else:                       # reachable but absent/unseen: evidence against freshness
+            b += 1.0
+    prob = (a + 1.0) / (a + b + 2.0)            # Beta(1,1) posterior mean
+    if prob < p.tau:
+        return Reading(False)
+    persisted = [r for r in responding if r.status == PERSISTED]
+    pool = persisted or [r for r in responding if r.status is not DEFAULT]
+    return pick_value(pool) if pool else Reading(False)
 
 
 def pbs_quorum(replies: Sequence[PeerReply], p: DecisionParams) -> Reading:
