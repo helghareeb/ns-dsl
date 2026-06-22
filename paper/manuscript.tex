@@ -1,6 +1,11 @@
 \documentclass[preprint,11pt]{elsarticle}
 
 \usepackage{amsmath,amssymb}
+\usepackage{amsthm}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{url}
@@ -413,47 +418,121 @@ compared empirically, not only in prose. Algorithm~\ref{alg:robust} states the r
 \label{sec:formal}
 The protocol is analysed under the crisp encoding (peers report the corners $(1,0,0)$, $(0,1,0)$,
 $(0,0,1)$ for persisted, cached, absent); the graded encoding interpolates the gate continuously
-between the bounds below. Let $R$ be the set of reachable peers with uniform weights.
+between the bounds below. Let $R$ be the set of reachable peers with normalized weights $w_j$ (the
+results below hold for arbitrary $w_j$, hence for the tuned weights of Axis~B).
 
-\paragraph{\textbf{Proposition 1} (one-round termination, partition tolerance).}
+\begin{proposition}[one-round termination, partition tolerance]\label{prop:terminate}
 Algorithm~\ref{alg:decide} issues exactly one query round and always returns \textsc{Act} or
-\textsc{Abstain}; it never blocks, for any pattern of failures or partitions. \emph{Proof.} The loop
-visits each peer once; unreachable peers contribute $(0,0,1)$ rather than waiting, so the gate
-$s\ge\tau$ is a total function of the collected views.~$\square$ The layer is therefore always
-available in the CAP sense, trading consistency for availability: a partitioned side decides from its
-local view alone.
+\textsc{Abstain}; it never blocks, for any pattern of failures or partitions.
+\end{proposition}
+\begin{proof}
+The loop visits each peer once; unreachable peers contribute $(0,0,1)$ rather than waiting, so the gate
+$s\ge\tau$ is a total function of the collected views.
+\end{proof}
+\noindent The layer is therefore always available in the CAP sense, trading consistency for
+availability: a partitioned side decides from its local view alone.
 
-\paragraph{\textbf{Lemma 1} (SVNNWGA conservative safety).}
+\begin{lemma}[SVNNWGA conservative safety]\label{lem:wga}
 Under SVNNWGA with $\tau\in(\tfrac13,1]$, the layer acts only if \emph{every} reachable peer reports
-\textsc{persisted}. \emph{Proof.} $\bar z.T=\prod_{j\in R}T_j^{w_j}=0$ once any reachable peer has
-$T_j=0$ (cached or absent); that peer has $I_j=1$ or $F_j=1$, so $\bar z.I=1-\prod(1-I_j)^{w_j}=1$ or
-$\bar z.F=1-\prod(1-F_j)^{w_j}=1$, giving $s=(2+0-\bar z.I-\bar z.F)/3\le\tfrac13<\tau$. A
-non-unanimous round therefore abstains: under SVNNWGA the layer never acts on cached- or
-absent-contaminated evidence.~$\square$
+\textsc{persisted}.
+\end{lemma}
+\begin{proof}
+$\bar z.T=\prod_{j\in R}T_j^{w_j}=0$ once any reachable peer has $T_j=0$ (cached or absent); that peer
+has $I_j=1$ or $F_j=1$, so $\bar z.I=1-\prod(1-I_j)^{w_j}=1$ or $\bar z.F=1-\prod(1-F_j)^{w_j}=1$, giving
+$s=(2+0-\bar z.I-\bar z.F)/3\le\tfrac13<\tau$. A non-unanimous round therefore abstains.
+\end{proof}
 
-\paragraph{\textbf{Lemma 2} (SVNNWAA optimistic liveness).}
+\begin{lemma}[SVNNWAA optimistic liveness]\label{lem:waa}
 Under SVNNWAA with $\tau\le1$, the layer acts whenever at least one reachable peer reports
-\textsc{persisted}. \emph{Proof.} $\bar z.T=1-\prod_{j\in R}(1-T_j)^{w_j}=1$ once any $T_j=1$; that
-persisted peer has $I_j=F_j=0$, so $\bar z.I=\prod I_j^{w_j}=0$ and $\bar z.F=\prod F_j^{w_j}=0$,
-whence $s=1\ge\tau$.~$\square$ Lemmas~1--2 bound the gate: every panel operator (Einstein, Hamacher,
-Dombi, Aczel--Alsina, Bonferroni) acts on a condition between ``some persisted'' (SVNNWAA) and ``all
-persisted'' (SVNNWGA), and the graded encoding moves the acting threshold continuously within that
-envelope --- which is exactly what the operator panel audits.
+\textsc{persisted}.
+\end{lemma}
+\begin{proof}
+$\bar z.T=1-\prod_{j\in R}(1-T_j)^{w_j}=1$ once any $T_j=1$; that persisted peer has $I_j=F_j=0$, so
+$\bar z.I=\prod I_j^{w_j}=0$ and $\bar z.F=\prod F_j^{w_j}=0$, whence $s=1\ge\tau$.
+\end{proof}
 
-\paragraph{\textbf{Lemma 3} (Byzantine gate resistance).}
-Let $b\le\lceil R/2\rceil-1$ reachable peers be Byzantine, each reporting an arbitrary triple. Under
-a coordinate-wise median aggregate, each of $\bar z.T,\bar z.I,\bar z.F$ lies between two honest order
-statistics, so the gate score equals the honest-only median and the adversaries cannot force
-$s\ge\tau$ when the honest majority would abstain. \emph{Proof.} With fewer than $R/2$ corruptions per
-coordinate the median is bracketed by honest values.~$\square$ This bounds the confidence-inflation
-attack on the gate; majority value selection (Algorithm~\ref{alg:decide}, line~8) remains a separate
-vector, addressed empirically.
+\noindent Lemmas~\ref{lem:wga}--\ref{lem:waa} bracket the gate for the \emph{crisp} encoding under
+arbitrary weights $w_j$: every panel operator (Einstein, Hamacher, Dombi, Acz\'el--Alsina, Bonferroni)
+acts on a condition between ``some persisted'' (SVNNWAA) and ``all persisted'' (SVNNWGA). The next
+proposition lifts this to the \emph{graded} encoding and tuned weights, answering ``what does safety mean
+when the encoding is graded and the weights are tuned?''.
 
-\paragraph{Split-brain.} By Proposition~1 each side of a partition decides independently in one round,
-so neither blocks. By Lemma~1 an SVNNWGA side acts only on unanimous local confirmation; with a
-single-writer ground truth it then serves the value its persisted peers hold, and the layer never
-asserts cross-partition agreement --- consistent with its stated scope as a freshness gate above the
-consistency substrate, not a consensus protocol.
+\begin{proposition}[graded envelope and monotonicity]\label{prop:graded}
+Let each reachable peer carry the graded triple induced by its freshness $\varphi_j=1/(1+\ell_j/\sigma)$
+(version-lag $\ell_j$, softness $\sigma$; Algorithm~\ref{alg:grade}), under arbitrary normalized weights
+$w_j$. For every panel operator the deneutrosophied score $s$ is non-decreasing in each $\varphi_j$.
+Consequently the acting set $\{\,s\ge\tau\,\}$ is monotone non-increasing in the threshold $\tau$ and
+monotone non-decreasing in the softness $\sigma$, and is contained between the SVNNWAA and SVNNWGA acting
+sets.
+\end{proposition}
+\begin{proof}
+Each operator is a weighted t-conorm/t-norm, coordinate-wise monotone in $(T,I,F)$; the graded map sends
+larger $\varphi_j$ to larger $T_j$ and smaller $I_j,F_j$, and composition preserves monotonicity, so $s$
+is non-decreasing in every $\varphi_j$. Raising $\tau$ only removes views from the super-level set
+$\{s\ge\tau\}$; $\varphi_j$ is increasing in $\sigma$, so increasing $\sigma$ raises $s$ and enlarges the
+set. The envelope holds because every weighted mean lies between its product (SVNNWGA) and co-product
+(SVNNWAA) aggregates.
+\end{proof}
+
+\begin{corollary}[bounded staleness of acted values under SVNNWGA]\label{cor:lag}
+Under SVNNWGA with the graded encoding and $\tau\in(\tfrac13,1]$, the layer acts only when every reachable
+peer has freshness $\varphi_j\ge\varphi_\tau$ for a threshold $\varphi_\tau$ fixed by $\tau$; equivalently
+every acted value comes from peers whose version-lag satisfies $\ell_j\le\sigma(1-\varphi_\tau)/\varphi_\tau$.
+The staleness of any acted value is therefore bounded \emph{a priori} by
+$\sigma(1-\varphi_\tau)/\varphi_\tau$, which the operator and $\tau$ control directly.
+\end{corollary}
+\begin{proof}
+By Proposition~\ref{prop:graded} SVNNWGA has the smallest acting set; its geometric truth aggregate
+$\prod_j\varphi_j^{w_j}$ clears the gate only if every factor does, giving the per-peer floor
+$\varphi_\tau$; invert $\varphi_j=1/(1+\ell_j/\sigma)$.
+\end{proof}
+
+\begin{lemma}[Byzantine gate resistance]\label{lem:byz}
+Let $b$ reachable peers be Byzantine, each reporting an arbitrary triple, with $b<\lceil R/2\rceil$ so
+honest peers hold a strict majority \emph{in every coordinate}. Under a coordinate-wise median aggregate,
+each of $\bar z.T,\bar z.I,\bar z.F$ lies between two honest order statistics; the gate score equals the
+honest-only median, and the adversaries cannot force $s\ge\tau$ when the honest majority would abstain.
+\end{lemma}
+\begin{proof}
+With $b<\lceil R/2\rceil$ corruptions the median of $R$ values in each coordinate is bracketed by honest
+order statistics; the score is a fixed monotone function of the three coordinate medians.
+\end{proof}
+
+\noindent Lemma~\ref{lem:byz} protects the \emph{gate}---the act/abstain confidence---but not the
+\emph{value} returned. We state that gap precisely, as it is the layer's dominant adversarial exposure.
+
+\begin{proposition}[value selection is not Byzantine-robust]\label{prop:valbyz}
+The value returned on \textsc{Act} is the majority value among peers reporting \textsc{persisted}
+(Algorithm~\ref{alg:decide}). Coordinate-wise robustness of the gate does not constrain this choice: if
+$b\ge1$ Byzantine peers report \textsc{persisted} on a common fabricated value at an inflated version and
+the honest persisted peers do not strictly outnumber them, the fabricated value can be selected even
+though the gate is satisfied. Hence gate-robustness does not imply value-robustness.
+\end{proposition}
+\begin{proof}
+The gate aggregate is invariant to which value underlies a \textsc{persisted} report; value selection is a
+separate majority over reported values, which a colluding block of size at least the honest persisted
+count can win.
+\end{proof}
+
+\noindent This matches Figure~\ref{fig:byzantine} (robust and averaging readers degrade together under
+value fabrication) and pinpoints the fix: a Byzantine-robust \emph{value} quorum beneath the gate, which
+we leave to future work (Section~\ref{sec:threats}).
+
+\begin{theorem}[committed-value safety, non-adversarial model]\label{thm:safety}
+In the crash/partition (non-adversarial) model, under SVNNWGA with $\tau\in(\tfrac13,1]$ the layer never
+acts on a value that was never committed.
+\end{theorem}
+\begin{proof}
+By Lemma~\ref{lem:wga} SVNNWGA acts only on a unanimous \textsc{persisted} round; a truthful
+\textsc{persisted} report on the single-writer ground truth marks a committed value, so the served
+majority value is committed.
+\end{proof}
+
+\paragraph{Split-brain.} By Proposition~\ref{prop:terminate} each side of a partition decides
+independently in one round, so neither blocks. By Lemma~\ref{lem:wga} an SVNNWGA side acts only on
+unanimous local confirmation; with a single-writer ground truth it then serves the value its persisted
+peers hold, and the layer never asserts cross-partition agreement --- consistent with its stated scope as
+a freshness gate above the consistency substrate, not a consensus protocol.
 
 \subsection{Scenarios and ground truth}
 Three scenarios instantiate the case study: (S1) personalized dynamic pricing (read-heavy), (S2)
@@ -558,7 +637,7 @@ neutrosophic readers degrade together---median, Krum, trimmed mean, and WAA alik
 $0.718$, and to $0.984$ at two adversaries; eventual consistency reaches $1.0$. The robust aggregators do
 \emph{not} outperform the averaging operators here, and we do not claim they do. This is informative
 rather than negative: robust aggregation defends the \emph{gate}---no adversarial minority can fabricate
-the \emph{confidence} needed to cross $\tau$ on a stale value (Lemma~3 bounds the perturbation of the
+the \emph{confidence} needed to cross $\tau$ on a stale value (Lemma~\ref{lem:byz} bounds the perturbation of the
 aggregated indeterminacy)---but a freshness layer's dominant exposure is value \emph{selection}, which
 \emph{value} to return among reachable peers, and coordinate-wise robustness on the $(T,I,F)$ triple does
 not govern that choice. The honest reading is a scope statement: the mechanism tolerates confidence
@@ -664,7 +743,7 @@ the consistency baselines. On crisp inputs every operator collapses to WAA.}\lab
 \includegraphics[width=0.7\linewidth]{f12_byzantine.pdf}
 \caption{Byzantine value-fabrication (S2, $\varphi=0.1$, $R=5$): the robust aggregators (median, Krum,
 trimmed mean) degrade together with the averaging operators as the adversary fraction grows---robust
-aggregation defends the gate (Lemma~3), not value selection.}\label{fig:byzantine}\end{figure}
+aggregation defends the gate (Lemma~\ref{lem:byz}), not value selection.}\label{fig:byzantine}\end{figure}
 
 \begin{figure}[t]\centering
 \includegraphics[width=0.95\linewidth]{f13_scalability.pdf}
