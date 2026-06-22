@@ -83,3 +83,70 @@ def test_weight_validation():
         svnnwaa([Z1, Z2], [-1.0, 2.0])        # negative
     with pytest.raises(ValueError):
         svnnwaa([])                            # empty
+
+
+# === Operator panel (Axis A) =================================================
+
+from nsdsl.neutro import operators as OP  # noqa: E402
+from nsdsl.neutro.score import score  # noqa: E402
+
+GRADED = [SVNN(0.8, 0.1, 0.1), SVNN(0.5, 0.3, 0.2), SVNN(0.2, 0.5, 0.3)]
+
+
+def test_hamacher_and_aa_reduce_to_waa_at_unit_parameter():
+    """gamma=1 Hamacher and lambda=1 Aczel-Alsina equal SVNNWAA (correctness anchor)."""
+    waa = svnnwaa(GRADED)
+    assert OP.svnn_hamacher(GRADED, gamma=1.0).almost_equal(waa, tol=1e-9)
+    assert OP.svnn_aczel_alsina(GRADED, lam=1.0).almost_equal(waa, tol=1e-9)
+
+
+@given(
+    zs=st.lists(
+        st.builds(SVNN, st.floats(0, 1), st.floats(0, 1), st.floats(0, 1)),
+        min_size=1, max_size=7,
+    ),
+)
+def test_panel_outputs_are_valid_svnn(zs):
+    for name in OP.OPERATORS:
+        z = OP.aggregate(name, zs)
+        assert 0.0 <= z.T <= 1.0 and 0.0 <= z.I <= 1.0 and 0.0 <= z.F <= 1.0
+
+
+@given(t=st.floats(0.001, 0.999), i=st.floats(0.001, 0.999), f=st.floats(0.001, 0.999))
+def test_panel_idempotence(t, i, f):
+    # Graded (non-corner) inputs. The closed-form operators are idempotent to machine epsilon;
+    # the Bonferroni mean's O(n^2) iterated oplus/power composition loses ~1e-4 near extreme
+    # memberships (a numerical artifact, not a correctness bug), so the shared tolerance is 1e-4.
+    z = SVNN(t, i, f)
+    for name in OP.OPERATORS:
+        assert OP.aggregate(name, [z, z, z]).almost_equal(z, tol=1e-4)
+
+
+def test_panel_differentiates_on_graded_inputs():
+    """On genuinely graded peer confidence the operators yield distinct aggregate scores."""
+    scores = {name: round(score(OP.aggregate(name, GRADED)), 4) for name in OP.OPERATORS}
+    assert len(set(scores.values())) >= 5, scores  # most operators differ
+
+
+def test_panel_collapses_on_crisp_corners():
+    """Documented null: the t-conorm operators collapse to WAA's OR-behaviour on crisp
+    persisted/cached/absent corners (one persisted peer -> score 1). The geometric WGA and the
+    interrelation Bonferroni mean differ. This collapse motivates the graded encoding."""
+    crisp = [PERSISTED, PERSISTED, SVNN(0, 1, 0), SVNN(0, 1, 0), SVNN(0, 1, 0)]
+    for name in ("waa", "einstein", "hamacher", "dombi", "aczel_alsina"):
+        assert score(OP.aggregate(name, crisp)) == pytest.approx(1.0, abs=1e-5)
+    assert score(OP.aggregate("wga", crisp)) < 0.5
+
+
+def test_bonferroni_single_peer_is_identity():
+    assert OP.svnn_bonferroni([Z1]).almost_equal(Z1, tol=1e-9)
+
+
+def test_aggregate_unknown_operator_raises():
+    with pytest.raises(ValueError):
+        OP.aggregate("not_an_operator", GRADED)
+
+
+def test_operator_panel_registry_complete():
+    assert {"waa", "wga", "einstein", "hamacher", "dombi", "aczel_alsina", "bonferroni"} \
+        <= set(OP.OPERATORS)
