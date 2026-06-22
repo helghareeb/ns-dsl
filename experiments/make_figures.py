@@ -50,7 +50,7 @@ def fig_pareto(df: pd.DataFrame, scenario: str = "S2", phi: float = 0.1) -> None
              & (df.failure_inject_phi == phi)].set_index("system")
     fig, ax = plt.subplots(figsize=(6.5, 4.2))
     # distinct marker SHAPE per system so coincident points (centralized==raft-lww at (0,0.9)) layer visibly
-    markers = {"centralized": "o", "raft-lww": "X", "neutro-waa": "*", "neutro-wga": "P",
+    markers = {"centralized": "o", "raft-lww": "X", "neutro-waa": "*", "neutro-wga": "h",
                "quorum-bool": "s", "pbs-quorum": "D", "lww-crdt": "v", "single-peer": "^",
                "naive-cache": "d"}
     for sysname in ORDER:
@@ -64,7 +64,8 @@ def fig_pareto(df: pd.DataFrame, scenario: str = "S2", phi: float = 0.1) -> None
     ax.set_xlabel("stale-decision rate (lower is better)")
     ax.set_ylabel("availability (higher is better)")
     ax.set_title(f"Correctness/availability trade-off ({scenario}, $\\varphi$={phi})")
-    ax.legend(fontsize=7, loc="center left", bbox_to_anchor=(1.02, 0.5))   # outside axes: never over data
+    ax.legend(fontsize=7, loc="center left", bbox_to_anchor=(1.02, 0.5),   # outside axes: never over data
+              labelspacing=0.8, handletextpad=0.6, borderpad=0.8, framealpha=0.9)
     ax.grid(True, alpha=0.2)
     _save(fig, "f3_pareto")
 

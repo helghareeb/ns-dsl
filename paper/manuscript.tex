@@ -542,6 +542,13 @@ from conservative (Acz\'el--Alsina: stale $0.162$ at availability $0.624$) throu
 frontier, a second tuning axis beyond $\tau$. On crisp inputs every operator collapses exactly to WAA (a
 verified null), so the spread is a property of the graded encoding, not of the operators in isolation.
 
+\paragraph{Score robustness (Axis A$'$).} Swapping the deneutrosophy score that maps an aggregated
+$(T,I,F)$ to the gate---an accuracy, a cosine, and a truth-weighted score in place of the default
+linear score---shifts a system along the same frontier without changing the qualitative result (S2,
+$\varphi=0.1$): stale-rate $0.235$ (linear), $0.227$ (accuracy), $0.219$ (cosine), $0.191$
+(truth-weighted), at availabilities from $0.929$ down to $0.762$. The Pareto-interior advantage is thus a
+property of the $(T,I,F)$ representation and its gate, not of any single score.
+
 \paragraph{Byzantine robustness (adversarial faults).} We stress the layer with peers that claim
 \emph{persisted} while serving a fabricated value at an inflated version, and compare the
 Byzantine-robust aggregators (coordinate-wise median, trimmed mean, Krum) against the averaging
@@ -719,15 +726,32 @@ trade-off. Next steps: measured latency on a Dockerized testbed, learned peer we
 
 %====================================================================
 \section*{Data availability}
-All raw per-trial outputs, the canonical \texttt{per\_config\_summary.csv},
-\texttt{pairwise\_tests.csv}, \texttt{multiseed\_validation.csv}, the content-hashed
-\texttt{config/calibration.json}, and the figure/table generators are in the repository; every numeric
-claim is regenerable via \texttt{REPRODUCE.md}.
+The content-hashed \texttt{config/calibration.json} and the aggregated result tables
+(\texttt{per\_config\_summary.csv}, \texttt{pairwise\_tests.csv}, \texttt{multiseed\_validation.csv}, and
+the per-experiment tables) that underlie every figure and table are provided with the submission and
+available from the corresponding author on reasonable request; together with the figure/table generators
+they regenerate every numeric claim (\texttt{REPRODUCE.md}). The full repository, including the raw
+per-trial outputs, will be released publicly on acceptance.
 
 \section*{Code availability}
-The implementation (neutrosophic operators, ANTLR DSL and rules engine, decision protocol, baselines,
-and harness) is open-source (MIT) in the repository at the tagged commit; dependency versions are
+The implementation (neutrosophic operators, ANTLR DSL and rules engine, decision protocol, baselines, and
+harness) is maintained in a private GitHub repository, available to the editors and referees on request
+during peer review, and will be made publicly available (MIT) upon acceptance. Dependency versions are
 pinned and the ANTLR parser is committed so no Java is needed to reproduce.
+
+\section*{Author contributions}
+H.A.E. conceived and designed the study, implemented the system, performed the experiments, analysed the
+data, and wrote the manuscript.
+
+\section*{Competing interests}
+The author declares no competing interests.
+
+\section*{Funding}
+The author received no specific funding for this work.
+
+\section*{Use of large language models}
+A large language model assisted with code scaffolding and manuscript drafting under the author's
+direction; the author reviewed and verified all content and is solely responsible for it.
 
 \bibliographystyle{elsarticle-num}
 \bibliography{refs}
