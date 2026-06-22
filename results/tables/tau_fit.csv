@@ -14,6 +14,7 @@ S1,neutro-krum-g,0.3,0.6672
 S1,neutro-waa-g-accuracy,0.38,0.6595
 S1,neutro-waa-g-cosine,0.34,0.6568
 S1,neutro-waa-g-truth_weighted,0.3,0.6612
+S1,prob-gate,0.3,0.6668
 S2,neutro-waa,0.7,-0.1548
 S2,neutro-wga,0.3,-0.6019
 S2,neutro-waa-g,0.58,-0.0793
@@ -29,6 +30,7 @@ S2,neutro-krum-g,0.3,-0.159
 S2,neutro-waa-g-accuracy,0.54,-0.075
 S2,neutro-waa-g-cosine,0.7,-0.0822
 S2,neutro-waa-g-truth_weighted,0.62,-0.0664
+S2,prob-gate,0.3,-0.1591
 S3,neutro-waa,0.3,0.2921
 S3,neutro-wga,0.3,-0.2532
 S3,neutro-waa-g,0.3,0.2921
@@ -44,3 +46,4 @@ S3,neutro-krum-g,0.3,0.2921
 S3,neutro-waa-g-accuracy,0.46,0.2907
 S3,neutro-waa-g-cosine,0.58,0.2836
 S3,neutro-waa-g-truth_weighted,0.3,0.2835
+S3,prob-gate,0.3,0.2901
