@@ -22,7 +22,7 @@
 
 \begin{frontmatter}
 
-\title{A decentralized neutrosophic decision layer for global-state freshness in microservices}
+\title{A decentralized neutrosophic decision layer for global-state freshness in microservices architectures}
 
 \author{Haitham A. El-Ghareeb}
 \address{Information Systems Department, Faculty of Computers and Information Sciences,
@@ -370,6 +370,30 @@ observable versions alone.
 \end{algorithmic}
 \end{algorithm}
 
+\begin{table}[t]\centering
+\caption{Graded-encoding anchors (the \textsc{Grade} map of Algorithm~\ref{alg:grade}). A peer's
+observable kind and version-lag $\ell$ relative to the most up-to-date reachable peer (freshness
+$\varphi=1/(1+\ell/\sigma)$, softness $\sigma=2$) map to a single-valued neutrosophic triple $(T,I,F)$:
+$T$ is confidence the held value is the committed-current truth, $I$ is unconfirmedness, $F$ is
+confidence the value is stale, superseded, or absent. The anchors are a documented, tunable design choice
+(calibration override \texttt{grade\_encoding}); the crisp corners $(1,0,0)/(0,1,0)/(0,0,1)$ remain the
+conservative baseline.}
+\label{tab:grade}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Peer kind (observable) & $T$ & $I$ & $F$ \\
+\midrule
+Persisted, fresh ($\ell=0$)          & $1.00$ & $0.10$ & $0.00$ \\
+Persisted, lagging ($\ell\to\infty$) & $0.50$ & $0.10$ & $0.40$ \\
+Clean cache, fresh                   & $0.45$ & $0.55$ & $0.10$ \\
+Clean cache, lagging                 & $0.00$ & $0.65$ & $0.35$ \\
+Suspected dirty write                & $0.15\,\varphi$ & $0.45$ & $0.45$ \\
+Absent / unreachable                 & $0.05$ & $0.10$ & $0.85$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \paragraph{Axis A$'$: deneutrosophy score.} The score $s(z)=(2+T-I-F)/3$~\cite{ye2014score} is one
 choice among several. An accuracy-degree score (truth less falsity), a cosine measure to the truth
 ideal, and a truth-weighted score are compared as a robustness ablation, to confirm that the freshness
@@ -413,6 +437,15 @@ compared empirically, not only in prose. Algorithm~\ref{alg:robust} states the r
 \State \Return \textsc{Act} on the persisted-majority value \textbf{if} $s\ge\tau$ \textbf{else} \textsc{Abstain}
 \end{algorithmic}
 \end{algorithm}
+
+\paragraph{Complexity.} A decision issues a single query round to the $R$ reachable peers, so the
+\emph{communication} cost is $O(|R|)$ messages per decision---one round-trip per peer ($O(1)$ for the
+local and single-hop baselines, $O(|R|)$ for every fan-out strategy, reported exactly in
+Tables~\ref{tab:headline-s2}--\ref{tab:headline-s1}). The \emph{computation} per decision is $O(|R|)$ for
+the averaging operators (a single linear fold of the $R$ weighted triples), with the deneutrosophy score
+and gate $O(1)$; the Byzantine-robust aggregators cost $O(|R|\log|R|)$ (coordinate-wise median, trimmed
+mean) or $O(|R|^2)$ (Krum's pairwise-distance selection). Memory is $O(|R|)$ for the collected views. The
+layer therefore adds no super-linear overhead over a plain quorum read.
 
 \subsection{Formal properties}
 \label{sec:formal}
@@ -553,18 +586,24 @@ and \emph{naive-cache} (local read, no coordination---the floor).
 
 \subsection{Experimental design and statistics}
 Each cell is $(\text{scenario},\text{system},\varphi,\text{partition})$ at $R=5$ replicas, cache
-ratio $\rho=0.5$, with failure-injection rate $\varphi\in\{0,0.1,0.3\}$ and partition
+ratio $\rho=0.5$, with failure-injection rate $\varphi\in\{0,0.1,0.2,0.3\}$ and partition
 $\in\{\text{none},\text{transient}\}$; the workload models clean-cached, dirty-cached (an uncommitted
 later write---the dirty-read phenomenon), persisted-latest, confidently-stale-persisted, and absent
-peers. Each cell runs $\geq 30$ repetitions of 200 decisions under three master seeds; the
-environment RNG excludes the system name, so every strategy sees the \emph{identical} decision and
-failure stream (a paired design). The acceptance threshold $\tau$ is fit per (scenario, operator) on
-\emph{held-out} calibration seeds by maximizing availability minus a per-scenario cost on the
-stale-rate, then frozen. A single canonical aggregator emits all tables and figures; it asserts a
-common calibration SHA-256 across inputs, computes stale-rate over acted decisions (success-only) and
-availability separately, applies Holm correction within a-priori comparison families, reports paired
-Cohen's $d$ with 5000-resample bootstrap 95\% CIs, and flags any cell whose headline contrast does not
-replicate in sign across all five seeds.
+peers. Each cell runs $50$ repetitions of $200$ decisions under five master seeds---$250$ repetitions
+per cell. The environment RNG excludes the system name, so every strategy sees the \emph{identical}
+decision and failure stream (a paired design). \emph{Unit of analysis.} Each repetition contributes one
+summary statistic (its mean stale-rate or availability over its $200$ decisions), and every significance
+test pairs strategies \emph{at the repetition level}: the sample size of each paired test is the number
+of repetitions ($n=250$ per cell), not the number of individual decisions, so within-repetition
+correlation among decisions does not inflate the effective $n$. The acceptance threshold $\tau$ is fit
+per (scenario, operator) on \emph{held-out} calibration seeds by maximizing availability minus a
+per-scenario cost on the stale-rate, then frozen. A single canonical aggregator emits all tables and
+figures; it asserts a common calibration hash across inputs and refuses to mix files that disagree (R6).
+For full transparency the locked calibration's canonical-JSON SHA-256 is
+{\footnotesize\ttfamily fe4dcdc7627569588da3de289f82469f8d1cf4ac7431889dbfc473803f626a58}. The aggregator
+computes stale-rate over acted decisions (success-only) and availability separately, applies Holm
+correction within a-priori comparison families, reports paired Cohen's $d$ with 5000-resample bootstrap
+95\% CIs, and flags any cell whose headline contrast does not replicate in sign across all five seeds.
 
 Correctness and availability come from this discrete-event simulation, which scales to many cells;
 \emph{decision latency} is measured separately on a real testbed: each peer is a live ASGI endpoint
@@ -589,10 +628,11 @@ of decisions---decisions the boolean flag cannot make without abstaining (Figure
 
 \paragraph{RQ2: correctness vs.\ eventual consistency.} At $\varphi=0.1$ (S2, no partition),
 neutro-waa attains a stale-rate of $0.248$ $[0.242,0.254]$ versus $0.415$ for lww-crdt, $0.506$ for
-naive-cache, and $0.349$ for the PBS partial-quorum reader (the nearest prior art)---reductions of
-$40\%$, $51\%$, and $29\%$ respectively (paired Wilcoxon over $250$ paired trials, Holm-corrected
-$p<10^{-30}$; Cohen's $d=-4.4$ vs.\ lww-crdt). In S1 the reduction versus naive-cache reaches $65\%$
-($0.137$ vs.\ $0.386$)
+naive-cache, and $0.349$ for the PBS partial-quorum reader (the nearest prior art)---absolute reductions of
+$16.7$, $25.8$, and $10.1$ percentage points ($40\%$, $51\%$, and $29\%$ relative), respectively
+(two-sided paired Wilcoxon signed-rank over $n=250$ paired repetitions, $\alpha=0.05$, Holm-corrected
+$p<10^{-30}$; Cohen's $d=-4.4$ vs.\ lww-crdt). In S1 the reduction versus naive-cache reaches $24.9$
+percentage points ($65\%$ relative; $0.137$ vs.\ $0.386$)
 at full availability.
 
 \paragraph{RQ3/RQ4: the availability--correctness trade-off.} The strongly-consistent baselines
