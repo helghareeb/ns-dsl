@@ -19,12 +19,12 @@ cites/refs), full N5 order through Data/Code availability + references.
 **Keep the editorial "we"** (author decision 2026-06-21) — the draft already uses it (26 instances),
 matching ns-hospital. Do NOT convert to single-author passive voice for this paper.
 
-## Title fix (Section 1, at final revision)
-Current title carries a colon and a subtitle:
-"A Neutrosophic Decision Layer for Global-State Decisions in Microservices: A Reproducible
-Evaluation of a (T,I,F)-Aggregating DSL and Rules Engine". Section 1.2 forbids colons and caps at
-≤ 15 words. Revise to a colon-free ≤15-word title at the final stage — candidate to confirm with the
-author: "A Neutrosophic Decision Layer for Global-State Decisions in Microservices" (10 words).
+## Title — LOCKED (author-confirmed 2026-06-21)
+**"A decentralized neutrosophic decision layer for global-state freshness in microservices"**
+(10 words, single declarative sentence, no colon, no subtitle, no subjective adjectives — Scientific
+Reports ≤20-word title rule satisfied). Applied to `paper/manuscript.tex`. Replaced the old
+colon+subtitle title ("…: A Reproducible Evaluation of a (T,I,F)-Aggregating DSL and Rules Engine"),
+which foregrounded the implementation rather than the contribution.
 
 ## What does NOT apply
 - **Harf → Āthār rebrand (FINAL Section 10): NOT APPLICABLE** (no rename in flight).
