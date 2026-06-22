@@ -35,8 +35,11 @@ N_DECISIONS = 200
 RTT_LEVELS_MS = [1.0, 5.0, 20.0]
 JITTER_FRAC = 0.25
 
+from nsdsl.consensus.strategy import GRADED_STRATEGIES  # noqa: E402
+
 ONE_HOP = {"single-peer", "centralized", "raft-lww"}
-ALL_HOPS = {"neutro-waa", "neutro-wga", "lww-crdt"}
+# The graded operator panel fans out to every peer, like the crisp neutro strategies.
+ALL_HOPS = {"neutro-waa", "neutro-wga", "lww-crdt", *GRADED_STRATEGIES}
 MAJORITY = {"quorum-bool", "pbs-quorum"}
 LOCAL = {"naive-cache"}
 

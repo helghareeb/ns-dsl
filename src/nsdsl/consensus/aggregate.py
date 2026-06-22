@@ -9,11 +9,14 @@ two operators are compared as an ablation (RQ5).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Mapping
+from typing import Mapping
 
-from ..neutro import SVNN, score, svnnwaa, svnnwga
+from ..neutro import SVNN, score
+from ..neutro.operators import aggregate as aggregate_op
 
-Method = Literal["waa", "wga"]
+#: An operator-panel member name (see ``nsdsl.neutro.operators.OPERATORS``): "waa"/"wga" are the
+#: submitted optimistic/conservative pair; the rest are the Axis-A panel.
+Method = str
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,7 +44,7 @@ def aggregate_views(
     peer_ids = list(views)
     zs = [views[p] for p in peer_ids]
     w = [weights[p] for p in peer_ids] if weights is not None else None
-    agg = svnnwaa(zs, w) if method == "waa" else svnnwga(zs, w)
+    agg = aggregate_op(method, zs, w)
     s = score(agg)
     return ConsensusDecision(
         key=key,

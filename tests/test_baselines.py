@@ -17,10 +17,14 @@ def run(name, replies, **kw):
 
 
 def test_registry_has_all_strategies():
-    assert set(STRATEGIES) == {
+    from nsdsl.consensus.strategy import GRADED_STRATEGIES
+    base = {
         "neutro-waa", "neutro-wga", "centralized", "quorum-bool", "pbs-quorum",
         "raft-lww", "lww-crdt", "single-peer", "naive-cache",
     }
+    assert set(STRATEGIES) == base | set(GRADED_STRATEGIES)
+    # the graded Axis-A operator panel is registered (G1)
+    assert {"neutro-einstein-g", "neutro-dombi-g", "neutro-bonferroni-g"} <= set(STRATEGIES)
 
 
 def test_pbs_quorum_reads_partial_quorum_latest():
