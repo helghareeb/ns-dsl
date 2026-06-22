@@ -29,32 +29,22 @@
 Mansoura University, Mansoura, Egypt}
 
 \begin{abstract}
-Microservices must often make business decisions over \emph{global} state---a personalized
-price, a fraud flag, a clone-readiness check---while each service is sovereign over its own data
-and the only cross-service signal is a cache that may hold values that were never committed.
-A boolean fresh/stale flag collapses a decisive distinction: a value held \emph{only in cache}
-(unconfirmed) is neither ``committed'' nor ``absent.'' This paper develops a decentralized decision
-layer in which every data item carries a single-valued neutrosophic triple $(T,I,F)$ for its
-persistence status (persisted, cached, absent); peer services fuse their views with weighted
-neutrosophic aggregation operators and a deneutrosophy score, then \emph{act} on a value or
-\emph{abstain}---with no central authority. The layer sits \emph{above} the consistency substrate and
-is \emph{not} a replication or consensus protocol. The neutrosophic encoding of storage status was
-sketched conceptually in a 2020 book chapter; the contributions here are the decision protocol, its
-formal safety and liveness guarantees, an operator-and-robustness audit (a panel of aggregation
-operators over a graded confidence encoding, alternative deneutrosophy scores, equal-budget
-metaheuristic tuning, and Byzantine-robust aggregation), and a controlled evaluation on an e-commerce
-testbed across three scenarios against a panel of consistency baselines, with $\geq 50$ repetitions
-per cell, five master seeds, threshold calibration on held-out workloads, Holm-corrected paired tests,
-and 5000-resample bootstrap confidence intervals, plus decision latency measured on a real HTTP testbed.
-Every number is regenerable from committed code, a content-hashed calibration file, and a recorded seed. The neutrosophic layer occupies a Pareto
-interior between strong consistency and eventual consistency: at a $10\%$ failure-injection rate it
-reduces the stale-decision rate by $40\%$ relative to last-writer-wins, by $51\%$ relative to a
-naive cache, and by $29\%$ relative to a probabilistically-bounded-staleness partial-quorum reader
-(Holm-corrected, large effect sizes), while remaining $88\%$ available under network partition where
-a strongly-consistent primary drops to $45\%$; against a boolean quorum control it attains comparable
-correctness at roughly twice the availability, isolating the value of the
-indeterminacy axis. We make no superiority claim over consensus protocols; we characterize an
-honest, reproducible trade-off.
+Microservices must often decide over \emph{global} state---a personalized price, a fraud flag, a
+clone-readiness check---while each service owns its data and the only cross-service signal is a cache
+that may hold values that were never committed. A boolean fresh/stale flag collapses a decisive case: a
+value held \emph{only in cache} is neither committed nor absent. We develop a decentralized decision
+layer in which every item carries a single-valued neutrosophic triple $(T,I,F)$ for its persistence
+status; peer services fuse their views with weighted neutrosophic operators and a deneutrosophy score,
+then act or abstain with no central authority. The layer sits \emph{above} the consistency substrate and
+is not a consensus protocol. We prove one-round termination and safety/liveness bounds (generalized to a
+graded encoding) and give an honest Byzantine analysis separating gate robustness from value selection;
+audits over operators, scores, and tuned weights confirm the result is not a design artefact. In a
+reproducible evaluation against strong, eventual, and quorum consistency baselines the layer occupies a
+Pareto interior: at a $10\%$ failure rate it cuts the stale-decision rate by $16.7$ percentage points
+versus last-writer-wins and stays $88\%$ available under partition where a strongly-consistent primary
+drops to $45\%$, matching a boolean quorum's correctness at about twice its availability. We make no
+superiority claim over consensus protocols and characterize an honest, reproducible trade-off; every
+number regenerates from committed code, a content-hashed calibration, and recorded seeds.
 \end{abstract}
 
 \begin{keyword}
