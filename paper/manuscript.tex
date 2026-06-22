@@ -301,7 +301,32 @@ value a service already holds is trustworthy enough to act on.
 The submitted layer fixes one aggregation pair (Eqs.~\eqref{eq:waa}--\eqref{eq:wga}), one
 deneutrosophy score, uniform weights, and a probabilistic failure model. To test whether any of these
 choices drives the result, each is generalised into an equal-footing panel and varied one axis at a
-time; the submitted configuration is the anchor and is reproduced exactly.
+time; the submitted configuration is the anchor and is reproduced exactly. Figure~\ref{fig:pipeline}
+shows the audit pipeline.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[>={Stealth[length=2.2mm]}, font=\footnotesize,
+  st/.style={draw,rounded corners,fill=blue!6,align=center,minimum height=10mm,minimum width=16mm},
+  ax/.style={draw,rounded corners,fill=gray!12,align=center,minimum height=13mm,minimum width=25mm},
+  tn/.style={draw,rounded corners,fill=orange!14,align=center,minimum height=11mm,minimum width=52mm},
+  out/.style={draw,rounded corners,fill=green!14,align=center,minimum height=10mm,minimum width=17mm}]
+  \node[st] (views) {peer\\$(T,I,F)$};
+  \node[ax,right=6mm of views] (enc) {encoding\\\textbf{crisp}\,/\,graded};
+  \node[ax,right=6mm of enc] (opA) {\textbf{Axis A}: operator\\WAA, WGA, Einstein,\\Dombi, \dots, median, Krum};
+  \node[ax,right=6mm of opA] (scA) {\textbf{Axis A$'$}: score\\std, accuracy,\\cosine, \dots};
+  \node[out,right=6mm of scA] (gate) {gate $s\!\ge\!\tau$\\Act\,/\,Abstain};
+  \draw[->] (views)--(enc); \draw[->] (enc)--(opA); \draw[->] (opA)--(scA); \draw[->] (scA)--(gate);
+  \node[tn,below=11mm of opA] (mh) {\textbf{Axis B}: equal-budget metaheuristic tuner\\GA, DE, CMA-ES, PSO, TPE, RIME, Ninja $\to(\tau,w)$};
+  \draw[->] (mh.north) -- (opA.south);
+  \draw[->] (mh.east) -| (gate.south);
+\end{tikzpicture}
+\caption{The two-axis audit pipeline. Peer views are encoded (crisp anchor or graded), aggregated by
+an operator-panel member (Axis~A), deneutrosophized by a score-panel member (Axis~A$'$), and gated at
+the calibrated threshold; an equal-budget metaheuristic panel (Axis~B) tunes the threshold and peer
+weights. One axis is varied at a time, holding the others at the submitted anchor.}
+\label{fig:pipeline}
+\end{figure}
 
 \paragraph{Axis A: aggregation operator.} Beyond the optimistic SVNNWAA and conservative SVNNWGA, a
 panel of single-valued neutrosophic weighted operators is evaluated: Einstein and Hamacher
