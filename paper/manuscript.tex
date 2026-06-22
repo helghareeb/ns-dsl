@@ -121,6 +121,24 @@ For an honest delineation: the conceptual neutrosophic encoding of storage statu
 originates in~\cite{elghareeb2020neutro}; the decision protocol, the formal results, the evaluation,
 and the operator, encoding, score, tuning, and robustness audits are contributions of this paper.
 
+\paragraph{What the 2020 sketch settled, and what it did not.} The chapter contributed one idea:
+\emph{label} storage status with a neutrosophic triple instead of a boolean. It did not turn that label
+into a working mechanism. Four problems separate the label from a usable, safe, decentralized decision
+layer, and each is solved here: (a)~\emph{fusion without an oracle}---how independent, sovereign peers
+combine their private $(T,I,F)$ views into one decision with no central authority and no ground-truth
+signal (weighted-operator aggregation over an observable, version-lag graded encoding,
+Section~\ref{sec:enrich}); (b)~\emph{calibration}---what threshold $\tau$ and weights warrant acting, and
+how to set them without leaking test data (held-out calibration and equal-budget metaheuristic tuning,
+Axis~B); (c)~\emph{degraded and adversarial peers}---how the layer behaves when peers are missing,
+partitioned, or Byzantine (Propositions~\ref{prop:terminate} and~\ref{prop:graded},
+Lemma~\ref{lem:byz}, and the value-selection limitation of Proposition~\ref{prop:valbyz}); and
+(d)~\emph{the safety--liveness tension}---that an optimistic aggregator maximizes availability while a
+conservative one maximizes correctness, with a tunable frontier between
+(Lemmas~\ref{lem:wga}--\ref{lem:waa}, Corollary~\ref{cor:lag}). The operator panel is not itself the
+novelty---surveying neutrosophic operators is established---we use it to \emph{demonstrate generality}:
+the freshness result is a property of the $(T,I,F)$ representation and its gate, not of any one operator,
+score, or weight setting.
+
 \paragraph{Why now.} The same problem---deciding whether locally-held, possibly-stale shared state is
 trustworthy enough to act on---is surfacing across four 2024--2026 research currents: multi-agent and
 LLM-agent systems that must reason over shared memory and name \emph{consistency} as a top open
@@ -804,6 +822,14 @@ high-cost decisions, conservative WGA where abstaining is acceptable. The indete
 source of the gain: by refusing to collapse ``cached-unconfirmed'' into ``stale,'' the layer keeps
 making correct decisions where a boolean quorum must abstain.
 
+\paragraph{The DSL front-end is interchangeable.} State and rule messages are parsed by an ANTLR4
+grammar, but nothing in the decision layer depends on that choice: the parser only turns a message into
+a typed event for the rules engine, and the neutrosophic aggregation, gate, and protocol operate on the
+resulting $(T,I,F)$ views. ANTLR4 remains a standard generator---with \emph{antlr-ng} a current drop-in
+successor---and the front-end could equally be a tree-sitter grammar (incremental, linear-time), a
+Langium/LSP workbench, or a Lark grammar without altering any result in this paper. The contribution is
+the decision mechanism, not the parser; we keep ANTLR for its mature multi-target tooling.
+
 %====================================================================
 \section{Threats to Validity}
 \label{sec:threats}
@@ -817,13 +843,19 @@ oracle's causal-observation model; we unit-test the oracle.
 calibration seeds and freeze them. The paired seed design gives every strategy identical failure and
 arrival streams.
 
-\paragraph{External.} The correctness/availability evaluation is simulation-based on a single
-e-commerce workload and one parameterization (sensitivity to $R$ and $\rho$ is probed in
-Figure~\ref{fig:sensitivity}). Decision latency is measured on a \emph{real} HTTP testbed---both in-process and on a
-single-host Docker Compose deployment of peer containers, which confirms the same tiers---but
-absolute values include local runtime overhead; a multi-host deployment under WAN latency and
-injected network faults (e.g.\ Toxiproxy) remains future work and is expected to preserve the tiers.
-The failure model is probabilistic, not adversarial/Byzantine.
+\paragraph{External.} The correctness/availability evaluation is simulation-based on synthetic
+e-commerce workloads (sensitivity to $R$ and $\rho$ is probed in Figure~\ref{fig:sensitivity}); how
+faithfully these map to production microservice traces is untested, and replaying real traces is future
+work. Decision latency is measured on a \emph{real} HTTP testbed---in-process and on a single-host Docker
+Compose deployment---which confirms the communication tiers, but the \emph{absolute} values include local
+runtime overhead and a shared host NIC; we therefore read the latency result as the \emph{relative}
+ordering of the tiers, not as milliseconds, and a geo-distributed multi-host study remains future work.
+Three further limitations bound the scope: (i)~the protocol assumes a \emph{static} reachable peer set
+per decision---service churn, elastic scale-out, and dynamic membership are not modeled and would need a
+membership/discovery layer beneath the gate; (ii)~the DSL event bus adds an operational hop and
+serialization cost that a production deployment must budget; and (iii)~adversarial behavior is studied in
+simulation (Figure~\ref{fig:byzantine}) under a value-fabrication model, so a real-testbed adversarial
+study and the robust value-quorum that Proposition~\ref{prop:valbyz} calls for remain future work.
 
 \paragraph{Conclusion.} Latency-like quantities are heavy-tailed, so we use nonparametric paired tests
 and report effect sizes with bootstrap CIs; multiple comparisons are Holm-corrected within a-priori
@@ -840,8 +872,13 @@ yields a decision layer on the Pareto interior between strong and eventual consi
 sustained availability under partition where a strongly-consistent primary stalls, and a clear
 advantage over a boolean quorum that isolates the value of the indeterminacy axis. We claim no
 superiority over consensus protocols; the contribution is an honest, calibrated, fully reproducible
-trade-off. Next steps: measured latency on a Dockerized testbed, learned peer weights, and adversarial
-(Byzantine) peer behavior.
+trade-off.
+
+\paragraph{Future work.} The clearest next step is a Byzantine-robust \emph{value} quorum beneath the
+gate---Proposition~\ref{prop:valbyz} shows it is needed to close the value-fabrication gap that gate
+robustness alone leaves open. Further directions: hardening the deployment study toward geo-distributed,
+multi-datacenter operation; replaying production microservice traces in place of synthetic workloads;
+learned, reputation-weighted peer weights; and dynamic membership and service churn beneath the gate.
 
 %====================================================================
 \section*{Data availability}
