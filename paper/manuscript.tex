@@ -223,6 +223,52 @@ value a service already holds is trustworthy enough to act on.
 \end{algorithmic}
 \end{algorithm}
 
+\subsection{Formal properties}
+\label{sec:formal}
+The protocol is analysed under the crisp encoding (peers report the corners $(1,0,0)$, $(0,1,0)$,
+$(0,0,1)$ for persisted, cached, absent); the graded encoding interpolates the gate continuously
+between the bounds below. Let $R$ be the set of reachable peers with uniform weights.
+
+\paragraph{\textbf{Proposition 1} (one-round termination, partition tolerance).}
+Algorithm~\ref{alg:decide} issues exactly one query round and always returns \textsc{Act} or
+\textsc{Abstain}; it never blocks, for any pattern of failures or partitions. \emph{Proof.} The loop
+visits each peer once; unreachable peers contribute $(0,0,1)$ rather than waiting, so the gate
+$s\ge\tau$ is a total function of the collected views.~$\square$ The layer is therefore always
+available in the CAP sense, trading consistency for availability: a partitioned side decides from its
+local view alone.
+
+\paragraph{\textbf{Lemma 1} (SVNNWGA conservative safety).}
+Under SVNNWGA with $\tau\in(\tfrac13,1]$, the layer acts only if \emph{every} reachable peer reports
+\textsc{persisted}. \emph{Proof.} $\bar z.T=\prod_{j\in R}T_j^{w_j}=0$ once any reachable peer has
+$T_j=0$ (cached or absent); that peer has $I_j=1$ or $F_j=1$, so $\bar z.I=1-\prod(1-I_j)^{w_j}=1$ or
+$\bar z.F=1-\prod(1-F_j)^{w_j}=1$, giving $s=(2+0-\bar z.I-\bar z.F)/3\le\tfrac13<\tau$. A
+non-unanimous round therefore abstains: under SVNNWGA the layer never acts on cached- or
+absent-contaminated evidence.~$\square$
+
+\paragraph{\textbf{Lemma 2} (SVNNWAA optimistic liveness).}
+Under SVNNWAA with $\tau\le1$, the layer acts whenever at least one reachable peer reports
+\textsc{persisted}. \emph{Proof.} $\bar z.T=1-\prod_{j\in R}(1-T_j)^{w_j}=1$ once any $T_j=1$; that
+persisted peer has $I_j=F_j=0$, so $\bar z.I=\prod I_j^{w_j}=0$ and $\bar z.F=\prod F_j^{w_j}=0$,
+whence $s=1\ge\tau$.~$\square$ Lemmas~1--2 bound the gate: every panel operator (Einstein, Hamacher,
+Dombi, Aczel--Alsina, Bonferroni) acts on a condition between ``some persisted'' (SVNNWAA) and ``all
+persisted'' (SVNNWGA), and the graded encoding moves the acting threshold continuously within that
+envelope --- which is exactly what the operator panel audits.
+
+\paragraph{\textbf{Lemma 3} (Byzantine gate resistance).}
+Let $b\le\lceil R/2\rceil-1$ reachable peers be Byzantine, each reporting an arbitrary triple. Under
+a coordinate-wise median aggregate, each of $\bar z.T,\bar z.I,\bar z.F$ lies between two honest order
+statistics, so the gate score equals the honest-only median and the adversaries cannot force
+$s\ge\tau$ when the honest majority would abstain. \emph{Proof.} With fewer than $R/2$ corruptions per
+coordinate the median is bracketed by honest values.~$\square$ This bounds the confidence-inflation
+attack on the gate; majority value selection (Algorithm~\ref{alg:decide}, line~8) remains a separate
+vector, addressed empirically.
+
+\paragraph{Split-brain.} By Proposition~1 each side of a partition decides independently in one round,
+so neither blocks. By Lemma~1 an SVNNWGA side acts only on unanimous local confirmation; with a
+single-writer ground truth it then serves the value its persisted peers hold, and the layer never
+asserts cross-partition agreement --- consistent with its stated scope as a freshness gate above the
+consistency substrate, not a consensus protocol.
+
 \subsection{Scenarios and ground truth}
 Three scenarios instantiate the case study: (S1) personalized dynamic pricing (read-heavy), (S2)
 suspicious-order fraud detection (asymmetric cost---a missed fraud is worse than a false alarm), and
