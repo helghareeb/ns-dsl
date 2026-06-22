@@ -38,6 +38,7 @@ def aggregate_views(
     tau: float = 0.5,
     key: str = "",
     n_responded: int | None = None,
+    score_fn: str = "standard",
 ) -> ConsensusDecision:
     if not views:
         raise ValueError("aggregate_views requires at least one peer view")
@@ -45,7 +46,7 @@ def aggregate_views(
     zs = [views[p] for p in peer_ids]
     w = [weights[p] for p in peer_ids] if weights is not None else None
     agg = aggregate_op(method, zs, w)
-    s = score(agg)
+    s = score(agg, score_fn)
     return ConsensusDecision(
         key=key,
         method=method,

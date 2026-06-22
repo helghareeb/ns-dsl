@@ -21,6 +21,7 @@ from ..baselines.base import DecisionParams, PeerReply, Reading, pick_value
 from ..neutro import DEFAULT, PERSISTED, SVNN
 from ..neutro.encode import grade, grade_views
 from ..neutro.operators import OPERATORS
+from ..neutro.score import SCORES
 from .aggregate import Method, aggregate_views
 
 
@@ -39,11 +40,12 @@ def _build_views(replies: Sequence[PeerReply], encoding: str) -> Mapping[str, SV
 
 
 def _decide(replies: Sequence[PeerReply], p: DecisionParams, method: Method,
-            *, encoding: str = "crisp") -> Reading:
+            *, encoding: str = "crisp", score_fn: str = "standard") -> Reading:
     views = _build_views(replies, encoding)
     if not views:
         return Reading(False)
-    decision = aggregate_views(views, method=method, weights=p.weights, tau=p.tau)
+    decision = aggregate_views(views, method=method, weights=p.weights, tau=p.tau,
+                               score_fn=score_fn)
     if not decision.accept:
         return Reading(False)
     persisted = [r for r in replies if r.reachable and r.status == PERSISTED]
@@ -59,11 +61,12 @@ def neutro_wga(replies: Sequence[PeerReply], p: DecisionParams) -> Reading:
     return _decide(replies, p, "wga")
 
 
-def make_neutro_strategy(method: Method, encoding: str = "graded"):
-    """Build a read-decision strategy for an operator-panel member under an encoding mode."""
+def make_neutro_strategy(method: Method, encoding: str = "graded",
+                         score_fn: str = "standard"):
+    """Build a read-decision strategy for an operator-panel member under an encoding + score."""
     def strat(replies: Sequence[PeerReply], p: DecisionParams) -> Reading:
-        return _decide(replies, p, method, encoding=encoding)
-    strat.__name__ = f"neutro_{method}_{encoding}"
+        return _decide(replies, p, method, encoding=encoding, score_fn=score_fn)
+    strat.__name__ = f"neutro_{method}_{encoding}_{score_fn}"
     return strat
 
 
@@ -71,4 +74,11 @@ def make_neutro_strategy(method: Method, encoding: str = "graded"):
 #: submitted crisp ``neutro-waa``/``neutro-wga`` remain registered separately and unchanged.
 GRADED_STRATEGIES = {
     f"neutro-{op}-g": make_neutro_strategy(op, "graded") for op in OPERATORS
+}
+
+#: Axis-A' deneutrosophy-score robustness panel: the canonical graded operator (waa-g) under each
+#: non-default score, so the grid measures whether the result depends on the score choice (G2).
+SCORE_PANEL_STRATEGIES = {
+    f"neutro-waa-g-{s}": make_neutro_strategy("waa", "graded", score_fn=s)
+    for s in SCORES if s != "standard"
 }

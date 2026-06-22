@@ -1,7 +1,12 @@
 """All read-decision strategies under one registry: ours + the baselines."""
 from __future__ import annotations
 
-from ..consensus.strategy import GRADED_STRATEGIES, neutro_waa, neutro_wga
+from ..consensus.strategy import (
+    GRADED_STRATEGIES,
+    SCORE_PANEL_STRATEGIES,
+    neutro_waa,
+    neutro_wga,
+)
 from .base import DecisionParams, PeerReply, Reading, Strategy
 from .strategies import (
     centralized,
@@ -20,6 +25,7 @@ STRATEGIES: dict[str, Strategy] = {
     "neutro-waa": neutro_waa,
     "neutro-wga": neutro_wga,
     **GRADED_STRATEGIES,
+    **SCORE_PANEL_STRATEGIES,
     "centralized": centralized,
     "quorum-bool": quorum_bool,
     "pbs-quorum": pbs_quorum,
