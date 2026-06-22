@@ -532,6 +532,32 @@ rather than a boolean flag converts indeterminacy into available, correct decisi
 transient: $0.226$ vs.\ $0.288$) at much lower availability ($0.276$ vs.\ $0.993$). WAA and WGA thus
 span an optimistic--conservative frontier, selectable per scenario via $\tau$.
 
+\paragraph{Operator panel (Axis A).} Beyond the crisp WAA/WGA pair, a panel of parametric
+$t$-norm/$t$-conorm operators evaluated on the graded encoding (Einstein, Hamacher, Dombi,
+Acz\'el--Alsina, Bonferroni; Section~\ref{sec:enrich}) spreads a tunable correctness/availability
+frontier at \emph{fixed} $\tau$ (Figure~\ref{fig:operator}). At $\varphi=0.1$ (S2) the operators range
+from conservative (Acz\'el--Alsina: stale $0.162$ at availability $0.624$) through intermediate
+(Einstein $0.187/0.750$; Dombi $0.202/0.842$) to optimistic (median and Krum $0.264/1.000$), with WAA
+($0.235/0.929$) in between. No single operator dominates---the choice selects a position on the
+frontier, a second tuning axis beyond $\tau$. On crisp inputs every operator collapses exactly to WAA (a
+verified null), so the spread is a property of the graded encoding, not of the operators in isolation.
+
+\paragraph{Byzantine robustness (adversarial faults).} We stress the layer with peers that claim
+\emph{persisted} while serving a fabricated value at an inflated version, and compare the
+Byzantine-robust aggregators (coordinate-wise median, trimmed mean, Krum) against the averaging
+operators (Figure~\ref{fig:byzantine}, S2, $R=5$). With no adversary the readers behave normally
+(stale-rate $0.235$--$0.264$). Once a single adversary appears ($1$ of $5$ peers), \emph{all}
+neutrosophic readers degrade together---median, Krum, trimmed mean, and WAA alike rise to stale-rate
+$0.718$, and to $0.984$ at two adversaries; eventual consistency reaches $1.0$. The robust aggregators do
+\emph{not} outperform the averaging operators here, and we do not claim they do. This is informative
+rather than negative: robust aggregation defends the \emph{gate}---no adversarial minority can fabricate
+the \emph{confidence} needed to cross $\tau$ on a stale value (Lemma~3 bounds the perturbation of the
+aggregated indeterminacy)---but a freshness layer's dominant exposure is value \emph{selection}, which
+\emph{value} to return among reachable peers, and coordinate-wise robustness on the $(T,I,F)$ triple does
+not govern that choice. The honest reading is a scope statement: the mechanism tolerates confidence
+inflation but not value fabrication, and closing the latter calls for a robust value-quorum, which we
+leave to future work.
+
 \paragraph{Measured latency.} On a real localhost HTTP testbed (Section~\ref{sec:methods}), the
 strategies separate into three latency tiers that confirm the communication-cost model
 (Figure~\ref{fig:latency}): a local read (naive-cache, $\approx 0$\,ms), a single round-trip
@@ -551,6 +577,16 @@ fan-out $\approx 26.4$\,ms median, confirming the result is not an artifact of t
 the cache ratio $\rho$ (Figure~\ref{fig:sensitivity}): as more reads are unconfirmed, the gap between
 the neutrosophic layer and the eventual-consistency baselines widens, because that is exactly the
 regime in which the indeterminacy axis carries information.
+
+\paragraph{Scalability with cluster size.} Sweeping the replica count $R\in\{2,\dots,50\}$ at fixed
+$\tau$ (Figure~\ref{fig:scalability}), the neutrosophic layer's stale-rate \emph{falls} monotonically
+with $R$---neutro-waa from $0.334$ at $R{=}2$ to $0.099$ at $R{=}50$, with availability rising from
+$0.805$ to $1.0$---at a per-decision message cost that scales linearly ($R$ messages, confirmed exactly
+in the sweep). More peers supply more evidence, so the aggregate is both more available and more correct.
+The contrast with the baselines is sharp: eventual consistency \emph{degrades} with scale (lww-crdt
+stale-rate rises from $0.367$ to $0.994$ as more replicas diverge), and the boolean quorum's availability
+stays low throughout ($0.28$--$0.41$). The layer therefore scales in the direction that matters---larger
+clusters make its decisions better, not worse.
 
 \paragraph{S3: clone catch-up.} A freshly cloned replica boots with every key absent and replays
 the logs-as-DSL stream one event at a time (Figure~\ref{fig:s3}). Recovered state grows linearly
@@ -610,6 +646,24 @@ catch-up while SVNNWAA stays available throughout. State-recovery and SVNNWGA ac
 \includegraphics[width=0.8\linewidth]{f10_throughput.pdf}
 \caption{Measured throughput (decisions/sec) under concurrent closed-loop load on the real HTTP
 testbed.}\label{fig:throughput}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.7\linewidth]{f11_operator_pareto.pdf}
+\caption{Axis A: the graded operator panel spreads a tunable correctness/availability frontier at fixed
+$\tau$ (S2, $\varphi=0.1$), from conservative (Acz\'el--Alsina) to optimistic (median/Krum), bracketed by
+the consistency baselines. On crisp inputs every operator collapses to WAA.}\label{fig:operator}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.7\linewidth]{f12_byzantine.pdf}
+\caption{Byzantine value-fabrication (S2, $\varphi=0.1$, $R=5$): the robust aggregators (median, Krum,
+trimmed mean) degrade together with the averaging operators as the adversary fraction grows---robust
+aggregation defends the gate (Lemma~3), not value selection.}\label{fig:byzantine}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.95\linewidth]{f13_scalability.pdf}
+\caption{Scalability with replica count $R$ (S2, $\varphi=0.1$): the neutrosophic layer's stale-rate
+falls and availability rises with $R$ (at $R$ messages/decision), whereas eventual consistency degrades
+with scale and the boolean quorum stays low-availability.}\label{fig:scalability}\end{figure}
 
 %====================================================================
 \section{Discussion}
