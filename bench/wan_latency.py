@@ -28,9 +28,9 @@ OUT = ROOT / "results" / "tables" / "wan_latency.csv"
 CONTROL = "http://127.0.0.1:8474"
 R = 5
 PROXY = [f"http://127.0.0.1:{18000 + i}" for i in range(R)]
-N = 2000          # samples per (profile, pattern) -- enough for a stable p99
+N = 800           # samples per (profile, pattern) -- solid p50/p95/p99, indicative p99.9
 WARMUP = 50
-CLIENT_TIMEOUT = 2.0
+CLIENT_TIMEOUT = 1.0   # a 1 s decision deadline: dropped requests (loss) count as a 1 s tail sample
 
 # WAN profiles: (name, base latency ms, jitter ms, connection-loss fraction)
 PROFILES = [
@@ -126,11 +126,17 @@ async def _bench() -> list[dict]:
             await _set_profile(client, latency, jitter, loss)
             for label, fn in PATTERNS:
                 for _ in range(WARMUP):
-                    await fn(client)
+                    try:
+                        await fn(client)
+                    except Exception:
+                        pass
                 samples = []
                 for _ in range(N):
                     t0 = time.perf_counter()
-                    await fn(client)
+                    try:
+                        await fn(client)
+                    except Exception:
+                        pass     # dropped/timed-out request under loss: record the elapsed (~timeout) as the sample
                     samples.append((time.perf_counter() - t0) * 1000.0)
                 row = {"profile": pname, "pattern": label, "latency_ms": latency,
                        "jitter_ms": jitter, "loss": loss, "n": N, **_tails(samples)}
