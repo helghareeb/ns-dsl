@@ -171,6 +171,83 @@ def fig_s3_convergence() -> None:
     _save(fig, "f9_s3_convergence")
 
 
+# --- enrichment figures (read result CSVs only; no simulation) -----------------------------
+
+OPERATOR_PANEL = ["neutro-waa-g", "neutro-wga-g", "neutro-einstein-g", "neutro-hamacher-g",
+                  "neutro-dombi-g", "neutro-aczel_alsina-g", "neutro-bonferroni-g",
+                  "neutro-median-g", "neutro-trimmed-g", "neutro-krum-g"]
+
+
+def fig_operator_pareto(df: pd.DataFrame, scenario: str = "S2", phi: float = 0.1) -> None:
+    """Axis A: the graded operator panel spreads the correctness/availability frontier."""
+    sub = df[(df.scenario == scenario) & (df.partition == "none")
+             & (df.failure_inject_phi == phi)].set_index("system")
+    fig, ax = plt.subplots(figsize=(6.5, 4.4))
+    for s in ("lww-crdt", "quorum-bool", "centralized"):       # reference baselines
+        if s in sub.index:
+            r = sub.loc[s]
+            ax.scatter(r.stale_rate, r.availability, s=70, marker="s", color="0.5", zorder=2)
+            ax.annotate(s, (r.stale_rate, r.availability), fontsize=6, color="0.4")
+    for s in OPERATOR_PANEL:
+        if s not in sub.index:
+            continue
+        r = sub.loc[s]
+        ax.scatter(r.stale_rate, r.availability, s=120, marker="o", zorder=3,
+                   label=s.replace("neutro-", "").replace("-g", ""))
+    ax.set_xlabel("stale-decision rate (lower is better)")
+    ax.set_ylabel("availability (higher is better)")
+    ax.set_title(f"Operator panel spreads the frontier ({scenario}, $\\varphi$={phi})")
+    ax.legend(fontsize=7, ncol=2, loc="lower left", title="graded operator")
+    ax.grid(True, alpha=0.2)
+    _save(fig, "f11_operator_pareto")
+
+
+def fig_byzantine() -> None:
+    """Honest Byzantine result: robust aggregators degrade together with the averaging operator
+    under value-fabrication (robust aggregation defends the gate, not value-selection)."""
+    path = ROOT / "results" / "tables" / "byzantine.csv"
+    if not path.exists():
+        return
+    d = pd.read_csv(path)
+    systems = ["neutro-waa-g", "neutro-median-g", "neutro-krum-g", "neutro-trimmed-g",
+               "quorum-bool", "lww-crdt"]
+    fig, ax = plt.subplots(figsize=(6, 4))
+    for s in systems:
+        ss = d[d.system == s].sort_values("byzantine_frac")
+        if ss.empty:
+            continue
+        style = "-o" if "median" in s or "krum" in s or "trimmed" in s else "--s"
+        ax.plot(ss.byzantine_frac, ss.stale_rate, style, label=s.replace("neutro-", ""))
+    ax.set_xlabel("Byzantine peer fraction")
+    ax.set_ylabel("stale-decision rate (acted)")
+    ax.set_title("Byzantine value-fabrication: robust $\\approx$ averaging (S2, $\\varphi$=0.1)")
+    ax.legend(fontsize=7, ncol=2)
+    ax.grid(True, alpha=0.2)
+    _save(fig, "f12_byzantine")
+
+
+def fig_scalability() -> None:
+    """Scalability: stale-rate improves with R at linear message cost; availability maintained."""
+    path = ROOT / "results" / "tables" / "scalability.csv"
+    if not path.exists():
+        return
+    d = pd.read_csv(path)
+    systems = ["neutro-waa-g", "neutro-median-g", "quorum-bool", "lww-crdt", "centralized"]
+    fig, axes = plt.subplots(1, 2, figsize=(9, 3.8))
+    for s in systems:
+        ss = d[d.system == s].sort_values("replicas")
+        if ss.empty:
+            continue
+        axes[0].plot(ss.replicas, ss.stale_rate, marker="o", label=s.replace("neutro-", ""))
+        axes[1].plot(ss.replicas, ss.availability, marker="o", label=s.replace("neutro-", ""))
+    axes[0].set_xlabel("replicas $R$"); axes[0].set_ylabel("stale-decision rate")
+    axes[1].set_xlabel("replicas $R$"); axes[1].set_ylabel("availability")
+    axes[0].set_xscale("log"); axes[1].set_xscale("log")
+    axes[1].legend(fontsize=7)
+    fig.suptitle("Scalability with cluster size (S2, $\\varphi$=0.1)")
+    _save(fig, "f13_scalability")
+
+
 def main() -> None:
     if not SUMMARY.exists():
         raise SystemExit(f"missing {SUMMARY}; run experiments/analyze_results.py first")
@@ -183,6 +260,9 @@ def main() -> None:
     fig_sensitivity()
     fig_s3_convergence()
     fig_throughput()
+    fig_operator_pareto(df)
+    fig_byzantine()
+    fig_scalability()
     print(f"figures -> {FIGDIR}")
 
 
