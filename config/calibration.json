@@ -5,7 +5,7 @@
   "calibration_seeds": [770001, 770002, 770003],
   "tau_grid": [0.30, 0.34, 0.38, 0.42, 0.46, 0.50, 0.54, 0.58, 0.62, 0.66, 0.70, 0.74, 0.78],
   "tau_objective": "availability - stale_cost * stale_rate, maximized on held-out calibration_seeds",
-  "stale_cost": {"S1": 2.0, "S2": 4.0, "S3": 2.5},
+  "stale_cost": {"S1": 2.0, "S2": 4.0, "S3": 2.5, "S4": 5.0},
   "reps_per_cell": 50,
   "calibration_reps": 30,
   "decisions_per_trial": 300,
@@ -15,7 +15,8 @@
   "scenarios": {
     "S1": {"tau": 0.50, "base_has_latest": 0.70, "stale_persist_frac": 0.50, "stale_vs_unseen": 0.70, "dirty_cache_prob": 0.25},
     "S2": {"tau": 0.60, "base_has_latest": 0.60, "stale_persist_frac": 0.60, "stale_vs_unseen": 0.75, "dirty_cache_prob": 0.35},
-    "S3": {"tau": 0.50, "base_has_latest": 0.55, "stale_persist_frac": 0.50, "stale_vs_unseen": 0.65, "dirty_cache_prob": 0.30}
+    "S3": {"tau": 0.50, "base_has_latest": 0.55, "stale_persist_frac": 0.50, "stale_vs_unseen": 0.65, "dirty_cache_prob": 0.30},
+    "S4": {"tau": 0.60, "base_has_latest": 0.50, "stale_persist_frac": 0.65, "stale_vs_unseen": 0.80, "dirty_cache_prob": 0.40}
   },
   "latency_model_ms": {"hop_mu": 1.6, "hop_sigma": 0.5, "local": 0.2},
   "partition_prob": 0.5,
