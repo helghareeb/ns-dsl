@@ -255,7 +255,13 @@ def fig_scalability() -> None:
         axes[1].plot(ss.replicas, ss.availability, marker="o", label=s.replace("neutro-", ""))
     axes[0].set_xlabel("replicas $R$"); axes[0].set_ylabel("stale-decision rate")
     axes[1].set_xlabel("replicas $R$"); axes[1].set_ylabel("availability")
-    axes[0].set_xscale("log"); axes[1].set_xscale("log")
+    from matplotlib.ticker import ScalarFormatter, NullFormatter
+    rvals = sorted(d.replicas.unique())
+    for ax in axes:
+        ax.set_xscale("log")
+        ax.set_xticks(rvals)
+        ax.xaxis.set_major_formatter(ScalarFormatter())
+        ax.xaxis.set_minor_formatter(NullFormatter())
     axes[1].legend(fontsize=7)
     fig.suptitle("Scalability with cluster size (S2, $\\varphi$=0.1)")
     _save(fig, "f13_scalability")
