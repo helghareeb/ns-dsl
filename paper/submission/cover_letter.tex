@@ -1,0 +1,49 @@
+\documentclass[11pt]{letter}
+\usepackage[margin=1in]{geometry}
+\usepackage{parskip}
+\usepackage[T1]{fontenc}
+\setlength{\longindentation}{0pt}
+\signature{Haitham A. El-Ghareeb}
+\address{Information Systems Department\\Faculty of Computers and Information Sciences\\Mansoura University, Mansoura, Egypt\\helghareeb@mans.edu.eg}
+\begin{document}
+\begin{letter}{The Editors\\\textit{Scientific Reports}}
+\opening{Dear Editors,}
+
+I am pleased to submit my manuscript, ``A decentralized neutrosophic decision layer for
+global-state freshness in microservices architectures,'' for consideration as an Article in
+\textit{Scientific Reports}.
+
+\textbf{The problem.} Microservices routinely make business decisions over global state---a price,
+a fraud flag, a model feature---while each service is sovereign over its own data and the only
+cross-service signal is a cache that may hold values that were never committed. The prevailing answer
+collapses this to a boolean fresh/stale flag, which cannot distinguish a value held only in cache
+(unconfirmed) from one that is genuinely stale or absent.
+
+\textbf{The contribution.} The manuscript develops a decentralized decision layer in which each data
+item carries a single-valued neutrosophic triple $(T,I,F)$ for its persistence status; peers fuse their
+views with weighted operators and a deneutrosophy score, and then act or abstain with no central
+authority. To my knowledge this is the first work to turn this representation into a concrete, formally
+analysed, and reproducibly evaluated mechanism. I provide one-round termination and safety/liveness
+guarantees generalized to a graded encoding, a Byzantine analysis that separates gate robustness from
+value selection (including a proven limitation and the precise fix it motivates), and a controlled
+evaluation against strong, eventual, quorum, and single-probability baselines across four
+scenarios---including a distinct ML feature-store domain---on a reproducible simulator and a real,
+emulated-WAN container testbed.
+
+\textbf{Why \textit{Scientific Reports}.} The work is a cross-disciplinary systems contribution: it
+bridges neutrosophic decision theory, distributed-systems consistency, and reproducible empirical
+methodology, and it is written to be accessible to a broad readership. I emphasise transparent,
+calibrated reporting---every reported number regenerates end-to-end from committed code, a
+content-hashed calibration, and recorded seeds. I make no superiority claim over consensus protocols;
+the manuscript characterises a calibrated trade-off and reports null results (for example, that a
+calibrated single-probability gate is competitive) plainly.
+
+\textbf{Statements.} This manuscript is original, is not under consideration elsewhere, and has not
+been discussed with a member of the journal's editorial board prior to submission. The author declares
+no competing interests and received no specific funding for this work.
+
+Thank you for considering my work.
+
+\closing{Sincerely,}
+\end{letter}
+\end{document}
