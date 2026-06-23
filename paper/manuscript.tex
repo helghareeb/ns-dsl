@@ -1,15 +1,12 @@
-\documentclass[11pt]{article}
+\documentclass[fleqn,10pt]{wlscirep}
 
-\usepackage[margin=1in]{geometry}
-\usepackage[T1]{fontenc}
-\usepackage{amsmath,amssymb}
+% wlscirep already provides: times/mathptmx fonts, amsmath/amsfonts/amssymb, graphicx/xcolor, booktabs,
+% authblk, geometry, caption, hyperref, superscript cite, fancyhdr, titlesec, enumitem, jabbrv.
 \usepackage{amsthm}
 \newtheorem{proposition}{Proposition}
 \newtheorem{lemma}{Lemma}
 \newtheorem{theorem}{Theorem}
 \newtheorem{corollary}{Corollary}
-\usepackage{booktabs}
-\usepackage{graphicx}
 \usepackage{url}
 % underscore package removed: with [strings] it broke \ref/\cite inside figure/table captions
 % (moving args). The only underscores needing it were two bibliography DOIs, now \_-escaped in refs.bib.
@@ -21,14 +18,10 @@
 \graphicspath{{../results/figures/}}
 
 \title{A decentralized neutrosophic decision layer for global-state freshness in microservices architectures}
-\author{Haitham A. El-Ghareeb\thanks{Corresponding author: \texttt{helghareeb@mans.edu.eg}}\\[2pt]
-Information Systems Department, Faculty of Computers and Information Sciences,\\
-Mansoura University, Mansoura, Egypt}
-\date{}
-
-\begin{document}
-\maketitle
-\linenumbers
+\author[1,*]{Haitham A. El-Ghareeb}
+\affil[1]{Information Systems Department, Faculty of Computers and Information Sciences, Mansoura University, Mansoura, Egypt}
+\affil[*]{Corresponding author: helghareeb@mans.edu.eg}
+\keywords{microservices; neutrosophic sets; data freshness; eventual consistency; Byzantine fault tolerance; decentralized decision-making}
 
 \begin{abstract}
 Microservices decide over global state, yet each owns its data and the only cross-service
@@ -48,9 +41,14 @@ whose every reported number regenerates from committed code, a content-hashed ca
 seeds.
 \end{abstract}
 
+\begin{document}
+\flushbottom
+\maketitle
+\thispagestyle{empty}
+\linenumbers
+
 \noindent\textbf{Keywords:} microservices; neutrosophic sets; data freshness; eventual consistency;
-Byzantine fault tolerance; decentralized decision-making.
-\bigskip
+Byzantine fault tolerance; decentralized decision-making.\\[6pt]
 
 %====================================================================
 \section{Introduction}
@@ -869,7 +867,7 @@ The author received no specific funding for this work.
 A large language model (Claude, Anthropic) assisted with code scaffolding and manuscript drafting under
 the author's direction; the author reviewed and verified all content and is solely responsible for it.
 
-\bibliographystyle{naturemag}
+% bibliography style is set by wlscirep.cls (\bibliographystyle{naturemag-doi})
 \bibliography{refs}
 
 \end{document}
