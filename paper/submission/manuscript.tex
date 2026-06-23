@@ -1,0 +1,876 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{amsthm}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{url}
+% underscore package removed: with [strings] it broke \ref/\cite inside figure/table captions
+% (moving args). The only underscores needing it were two bibliography DOIs, now \_-escaped in refs.bib.
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
+\usepackage{lineno}
+\graphicspath{{figures/}}
+
+\title{A decentralized neutrosophic decision layer for global-state freshness in microservices architectures}
+\author{Haitham A. El-Ghareeb\thanks{Corresponding author: \texttt{helghareeb@mans.edu.eg}}\\[2pt]
+Information Systems Department, Faculty of Computers and Information Sciences,\\
+Mansoura University, Mansoura, Egypt}
+\date{}
+
+\begin{document}
+\maketitle
+\linenumbers
+
+\begin{abstract}
+Microservices decide over global state, yet each owns its data and the only cross-service
+signal is a cache that may hold uncommitted values. A boolean fresh/stale flag cannot express a value
+held only in cache: neither committed nor absent, but \emph{indeterminate}. We develop a decentralized
+decision layer where each item carries a single-valued neutrosophic triple $(T,I,F)$ for persistence
+status; peers fuse their views with weighted operators and a deneutrosophy score and act or abstain
+without central authority. The layer sits above the consistency substrate and is not a consensus
+protocol. We prove one-round termination and conservative-safety/optimistic-liveness bounds (generalized
+to a graded encoding); a Byzantine analysis separates gate from value robustness; and operator, score,
+and weight audits confirm it is not a design artefact. Against consistency baselines it occupies a
+Pareto interior: at a $10\%$ failure rate it cuts the stale-decision rate by $16.7$ points versus
+last-writer-wins, stays $88\%$ available under partition where a primary drops to $45\%$, matches a
+boolean quorum's correctness at twice its availability, and generalizes to a distinct feature-store
+domain. We claim no superiority over consensus; the contribution is a transparent, reproducible trade-off
+whose every reported number regenerates from committed code, a content-hashed calibration, and fixed
+seeds.
+\end{abstract}
+
+\noindent\textbf{Keywords:} microservices; neutrosophic sets; data freshness; eventual consistency;
+Byzantine fault tolerance; decentralized decision-making.
+\bigskip
+
+%====================================================================
+\section{Introduction}
+\label{sec:intro}
+
+Microservices architectures decompose an application into sovereign services, each owning its data
+and exposing it only through APIs~\cite{soldani2018pains}. This sovereignty is precisely what makes
+\emph{global-state} decisions hard: computing a personalized price, deciding whether an order is
+fraudulent, or determining whether a freshly cloned replica may begin serving all require data that
+lives in other services and may be only transiently cached. Strong consistency removes the
+uncertainty but reintroduces a coordination point that contradicts the architecture's goals and
+stalls under partition~\cite{pardon2018bac,abadi2012consistency}; eventual consistency keeps
+services available but exposes them to \emph{dirty reads}---acting on a cached value that was never
+committed and will not become the truth~\cite{laigner2021data}.
+
+The difficulty is that a boolean ``fresh/stale'' flag collapses two qualitatively different states into
+one: a cached-but-unconfirmed value is treated identically to an absent value, even though it usually
+holds the latest write. What a boolean bit discards is \emph{indeterminacy}. Annotating a data item
+with a single-valued neutrosophic triple $(T,I,F)$---reading persisted, cached, and absent as truth,
+indeterminacy, and falsity---retains the unconfirmed-but-present state, so a service can make a
+calibrated act-or-abstain decision rather than a brittle binary one. The neutrosophic encoding of
+storage status was introduced conceptually in~\cite{elghareeb2020neutro}; this paper develops it into a
+concrete decentralized decision layer with an explicit protocol, formal guarantees, and a controlled
+empirical evaluation.
+
+\paragraph{Contributions.}
+\begin{enumerate}
+\item A decentralized $(T,I,F)$-aggregating decision protocol for global-state freshness: each peer
+encodes its storage status as a single-valued neutrosophic number, peers fuse their views with
+weighted neutrosophic operators and a deneutrosophy score (a crisp confidence derived from the triple),
+and a service acts or abstains with no central authority. The layer is a per-item freshness decision
+above the consistency substrate, not a replication or consensus protocol; its directly comparable
+control is a boolean quorum (Section~\ref{sec:methods}).
+\item Formal guarantees for the protocol: one-round termination and partition tolerance, a
+conservative-safety and an optimistic-liveness bound that bracket the act/abstain gate, and Byzantine
+gate-resistance under robust aggregation (Section~\ref{sec:formal}).
+\item A two-axis audit that tests whether the result is an artefact of design choices: an
+aggregation-operator panel (Einstein, Hamacher, Dombi, Acz\'el--Alsina, Bonferroni) over a graded
+confidence encoding, a deneutrosophy-score panel, and an equal-budget metaheuristic tuning of the
+threshold and peer weights (Section~\ref{sec:enrich}).
+\item A robustness study under an adversarial (Byzantine) failure model with median-, trimmed-mean-,
+and Krum-based robust aggregation, and a freshness-SLO baseline that makes the comparison to
+adaptive-consistency systems empirical rather than positional (Sections~\ref{sec:enrich},~\ref{sec:results}).
+\item A reproducible evaluation on an e-commerce testbed against a panel of consistency baselines
+(strong, eventual, quorum, and partial-quorum) with a privileged ground-truth oracle and held-out
+threshold calibration. The design uses $\geq 50$ repetitions per cell across five seeds, Holm correction
+for multiple comparisons, and bootstrap confidence intervals; every reported number can be regenerated
+from committed code, a content-hashed calibration file, and recorded seeds (Section~\ref{sec:results}).
+\end{enumerate}
+
+The operator, score, and weight audits are not the core novelty but establish generality: the freshness
+result is a property of the $(T,I,F)$ representation and its gate, not of any single operator, score, or
+weight setting.
+
+\paragraph{Contemporary relevance.} The problem of deciding whether locally-held, possibly-stale shared
+state is trustworthy enough to act on is surfacing across four 2024--2026 research currents: multi-agent
+and LLM-agent systems that must reason over shared memory and name consistency as a leading open
+challenge~\cite{chang2025sagallm}; the edge-cloud continuum and serverless state, in which an actor reads
+ephemeral or expired state~\cite{marcelino2024goldfish}; ML feature stores that operationalize
+feature-freshness service-level objectives~\cite{delarua2024hopsworks,wooders2024ralf}; and microservice
+data-consistency surveys and benchmarks~\cite{laigner2021data,laigner2025marketplace,rodrigues2025slr}.
+Each collapses a graded freshness signal to a boolean or a single probability, whereas the $(T,I,F)$
+encoding retains the indeterminacy axis these settings require.
+
+%====================================================================
+\subsection{Related work}
+\label{sec:related}
+
+\paragraph{Microservices state and consistency.} Surveys of microservice data
+management~\cite{soldani2018pains,laigner2021data} document that per-service sovereignty leaves no
+global view, and the BAC theorem~\cite{pardon2018bac} formalizes the backup--availability--consistency
+tension specific to microservices. These works frame the problem we target; none provide a
+freshness-aware decision mechanism.
+
+\paragraph{Consistency models and CRDTs.} Causal+~\cite{lloyd2011cops}, probabilistically bounded
+staleness (PBS)~\cite{bailis2012pbs}, conflict-free replicated data types~\cite{shapiro2011crdt,preguica2018crdt},
+the PACELC trade-off~\cite{abadi2012consistency}, and surveys of non-transactional consistency
+models~\cite{viotti2016consistency} give the vocabulary of staleness. PBS is the closest prior art for
+``probabilistic freshness,'' but it reasons about quorum probabilities over a \emph{boolean} read,
+not a three-valued per-peer provenance fused into an act/abstain decision; we therefore include a
+PBS-style partial-quorum reader as an explicit baseline (Section~\ref{sec:methods}).
+
+\paragraph{Consensus (for positioning).} Raft~\cite{ongaro2014raft}, Paxos~\cite{lamport1998paxos},
+and Byzantine fault tolerance~\cite{castro2002pbft} solve \emph{agreement} on a replicated log. Our
+layer is orthogonal: it decides, above whatever substrate exists, whether the value a service already
+holds is fresh enough to act on. We therefore use a Raft-style last-writer-wins reader only as a
+reference point, never as a competitor for the same job.
+
+\paragraph{Rules engines and DSLs.} Production rule systems (Rete~\cite{forgy1982rete},
+Drools~\cite{proctor2012drools}) and DSL tooling~\cite{mernik2005dsl,parr2013antlr} are uniformly
+\emph{boolean} substrates: a fact is present or not. We reuse ANTLR to parse a JSON rule DSL but make
+the freshness of each fact a graded, neutrosophic quantity.
+
+\paragraph{Neutrosophic aggregation.} Single-valued neutrosophic sets~\cite{wang2010svns,smarandache1999unifying}
+and their weighted operators and score functions~\cite{ye2014score,jana2019robust,elghareeb2019package}
+are mature, but applied almost exclusively to offline multi-criteria decision making, including the
+authors' prior work~\cite{nabeeh2019topsis}. To our knowledge no prior work encodes runtime
+persistence/freshness as a $(T,I,F)$ triple and fuses peer views into a decentralized systems
+decision. This intersection---neutrosophic aggregation applied to microservice state---is the gap we
+fill.
+
+\paragraph{Accuracy-aware staleness and adaptive consistency.} The closest modern work treats
+staleness as a first-class, accuracy-aware quantity: RALF schedules feature-store maintenance against
+a downstream-accuracy ``regret''~\cite{wooders2024ralf}, and adaptive-consistency tuners select
+consistency levels under cost/SLO pressure. These are \emph{centralized} schedulers/tuners; our layer
+is the \emph{decentralized}, per-item act/abstain dual---each peer fuses $(T,I,F)$ views without a
+central accuracy oracle. We position RALF as the nearest modern point of comparison and deepen the
+contrast with PBS (a single staleness probability vs.\ a fused three-valued provenance).
+
+\paragraph{Reproducible evaluation.} We follow the microservices benchmarking
+tradition~\cite{gan2019deathstarbench,zhou2021trainticket}, statistically rigorous performance
+methodology~\cite{georges2007rigorous}, and reproducibility principles for cloud
+experiments~\cite{papadopoulos2021reproducible}: multiple repetitions and seeds, effect sizes with
+confidence intervals, multiple-comparison correction, and a content-hashed, single-aggregator
+pipeline.
+
+Table~\ref{tab:related} positions this work against the prior families. The distinguishing axis is the
+\emph{freshness signal}: prior readers collapse it to a Boolean (committed or not), a single staleness
+probability, or a centralized SLO, whereas the layer here carries a fused three-valued
+$(T,I,F)$ provenance, decentrally, with an explicit abstain option and Byzantine-robust variants.
+
+\begin{table}[t]
+\centering
+\caption{Where the neutrosophic freshness layer sits relative to prior approaches to global-state
+reads. ``Abstain'' = can decline to act under uncertainty; ``Decentralized'' = no coordinating leader.}
+\label{tab:related}
+\small
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
+\begin{tabular}{@{}llccc@{}}
+\toprule
+Approach & Freshness signal & Abstain & Byz. & Decentralized \\
+\midrule
+Strong consistency (Raft/Paxos)~\cite{ongaro2014raft,lamport1998paxos} & committed (serialized) & no & via PBFT & no \\
+Eventual / LWW CRDT~\cite{shapiro2011crdt} & none (serve latest) & no & no & yes \\
+Bounded staleness (PBS)~\cite{bailis2012pbs} & one probability & no & no & quorum \\
+Consistency SLA (Pileus)~\cite{terry2013pileus} & per-read SLO & no & no & no \\
+Feature-freshness scheduler (RALF)~\cite{wooders2024ralf} & centralized regret & no & no & no \\
+Boolean quorum (control) & 1 bit (fresh/stale) & yes & no & yes \\
+\textbf{This work} & \textbf{$(T,I,F)$ triple} & \textbf{yes} & \textbf{median/Krum} & \textbf{yes} \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+%====================================================================
+\section{Results}
+\label{sec:results}
+
+Across the validated grid ($288$ cells over five master seeds), $98\%$ of headline cells replicate
+in sign across all seeds.
+Supplementary Fig.~S1 shows stale-decision rate versus failure-injection rate; Figure~\ref{fig:pareto}
+the correctness/availability trade-off; Figure~\ref{fig:partition} availability under partition.
+Supplementary Table~S2 reports S2 in full; Supplementary Table~S3 reports S1.
+
+\subsection{Signal richness}
+The indeterminacy axis is heavily populated (mean cache occupancy
+$\approx 0.4$), and the neutrosophic decision differs from a boolean quorum on a substantial fraction
+of decisions---decisions the boolean flag cannot make without abstaining (Supplementary Fig.~S2).
+
+\subsection{Correctness and availability under failure}
+At $\varphi=0.1$ (S2, no partition),
+neutro-waa (the optimistic weighted-arithmetic configuration of the layer; Section~\ref{sec:methods})
+attains a stale-rate of $0.248$ $[0.244,0.251]$ versus $0.415$ for lww-crdt, $0.506$ for
+naive-cache, and $0.349$ for the PBS partial-quorum reader (the nearest prior art)---absolute reductions of
+$16.7$, $25.8$, and $10.1$ percentage points ($40\%$, $51\%$, and $29\%$ relative), respectively
+(two-sided paired Wilcoxon signed-rank over $n=250$ paired repetitions, $\alpha=0.05$, Holm-corrected
+$p<10^{-30}$; Cohen's $d=-4.4$ vs.\ lww-crdt). In S1 the reduction versus naive-cache reaches $24.9$
+percentage points ($65\%$ relative; $0.137$ vs.\ $0.386$)
+at full availability.
+
+\paragraph{RQ3/RQ4: the availability--correctness trade-off.} The strongly-consistent baselines
+(centralized, raft-lww) achieve zero staleness but lose availability under failure, collapsing to
+$0.453$ under transient partition where neutro-waa remains $0.880$ available
+(Cohen's $d=12.6$, Holm-corrected $p<10^{-30}$; Figure~\ref{fig:partition}). Neutro-waa thus occupies the
+Pareto interior (Figure~\ref{fig:pareto}): nothing dominates it---centralized trades availability for
+its zero staleness, and every full-availability baseline is far staler.
+
+\paragraph{RQ2 vs.\ the boolean control.} Quorum-bool reaches a low stale-rate only by abstaining on
+most decisions ($0.402$ availability at $\varphi=0.1$, S2); neutro-waa attains comparable correctness
+at $0.942$ availability---roughly $2.3\times$. This isolates the contribution: retaining $(T,I,F)$
+rather than a boolean flag converts indeterminacy into available, correct decisions.
+
+\subsection{Comparison with a single-probability gate}
+A one-bit
+quorum is an easy control; the sharper test is a \emph{calibrated single-probability} gate (prob-gate)
+that collapses the same evidence into one Bayesian freshness posterior and acts when it clears $\tau$.
+prob-gate is a strong baseline---far above the boolean quorum (availability $0.998$ vs.\ $0.402$ at S2,
+$\varphi=0.1$)---and is \emph{not} dominated by the neutrosophic layer: on S1 the two are near-identical
+($0.136$ vs.\ $0.137$ stale at full availability), and on S2 prob-gate trades $2.8$ percentage points
+more staleness ($0.263$ vs.\ neutro-waa-g's $0.235$) for $6.9$ points more availability ($0.998$ vs.\
+$0.929$). The result is reported as it stands: $(T,I,F)$ does not beat a
+calibrated scalar on the headline trade-off, but it is not a mere relabelling either. Calibrated for the
+asymmetric cost, the single scalar collapses toward ``act on almost everything'' ($0.998$ availability),
+whereas the indeterminacy axis lets the layer \emph{selectively abstain} on genuinely-unconfirmed
+decisions, and the operator/score/threshold family spans the whole frontier
+(Figure~\ref{fig:operator}) that one calibrated point cannot. The value of the three-valued encoding is
+representational---frontier control and an interpretable separation of indeterminacy from falsity---not a
+uniform accuracy win over a strong scalar.
+
+\subsection{Operator, score, and weight robustness}
+SVNNWGA (the single-valued neutrosophic weighted geometric averaging
+operator) is the conservative operator: lower stale-rate (e.g.\ S3 transient at $\varphi=0.1$: $0.218$
+vs.\ $0.288$) at much lower availability ($0.279$ vs.\ $0.993$). The arithmetic (SVNNWAA) and geometric (SVNNWGA) operators
+thus span an optimistic--conservative frontier, selectable per scenario via $\tau$.
+
+\paragraph{Operator panel (Axis A).} Beyond the crisp WAA/WGA pair, a panel of parametric
+$t$-norm/$t$-conorm operators evaluated on the graded encoding (Einstein, Hamacher, Dombi,
+Acz\'el--Alsina, Bonferroni; Section~\ref{sec:enrich}) spreads a tunable correctness/availability
+frontier at \emph{fixed} $\tau$ (Figure~\ref{fig:operator}). At $\varphi=0.1$ (S2) the operators range
+from conservative (Acz\'el--Alsina: stale $0.162$ at availability $0.624$) through intermediate
+(Einstein $0.187/0.750$; Dombi $0.202/0.842$) to optimistic (median and Krum $0.264/1.000$), with WAA
+($0.235/0.929$) in between. No single operator dominates---the choice selects a position on the
+frontier, a second tuning axis beyond $\tau$. On crisp inputs every operator collapses exactly to WAA (a
+verified null), so the spread is a property of the graded encoding, not of the operators in isolation.
+
+\paragraph{Score robustness (Axis A$'$).} Swapping the deneutrosophy score that maps an aggregated
+$(T,I,F)$ to the gate---an accuracy, a cosine, and a truth-weighted score in place of the default
+linear score---shifts a system along the same frontier without changing the qualitative result (S2,
+$\varphi=0.1$): stale-rate $0.235$ (linear), $0.227$ (accuracy), $0.219$ (cosine), $0.191$
+(truth-weighted), at availabilities from $0.929$ down to $0.762$. The Pareto-interior advantage is thus a
+property of the $(T,I,F)$ representation and its gate, not of any single score.
+
+\paragraph{Weight and threshold tuning (Axis B).} Replacing the hand-fit $\tau$ and uniform weights with
+an equal-budget metaheuristic search over $[\tau, w_1,\dots,w_R]$---seven optimizers (random, DE, CMA-ES,
+TPE, PSO, RIME, NiOA) at $120$ evaluations each (Supplementary Fig.~S8)---gives a two-part
+result. First, tuning helps only where the cost is asymmetric: on the symmetric scenarios S1 and
+S3 every optimizer recovers \emph{exactly} the uniform-weights utility ($0.667$ and $0.292$---the hand-fit
+calibration is already optimal), whereas on the asymmetric-cost S2 the best search improves utility by
+$10.1\%$ ($-0.079\to-0.071$) by weighting peers unequally. Second, at equal budget the optimizer choice is
+largely immaterial: all seven converge to an identical utility on S1 and S3 and to within ${\approx}2\%$
+on S2, where a strong optimizer (TPE) beats uniform while a poorly matched one (CMA-ES) falls
+slightly below it. The tuning gain is therefore real but modest and regime-specific, and---consistent with
+the No-Free-Lunch theorem~\cite{wolpert1997nfl}---not an artefact of choosing a fashionable optimizer.
+
+\subsection{Byzantine robustness}
+We stress the layer with peers that claim
+\emph{persisted} while serving a fabricated value at an inflated version, and compare the
+Byzantine-robust aggregators (coordinate-wise median, trimmed mean, Krum) against the averaging
+operators (Figure~\ref{fig:byzantine}, S2, $R=5$). With no adversary the readers behave normally
+(stale-rate $0.235$--$0.264$). Once a single adversary appears ($1$ of $5$ peers), \emph{all}
+neutrosophic readers degrade together---median, Krum, trimmed mean, and WAA alike rise to stale-rate
+$0.718$, and to $0.984$ at two adversaries; eventual consistency reaches $1.0$. The robust aggregators do
+\emph{not} outperform the averaging operators here, and we do not claim they do. This is informative
+rather than negative: robust aggregation defends the \emph{gate}---no adversarial minority can fabricate
+the \emph{confidence} needed to cross $\tau$ on a stale value (Lemma~\ref{lem:byz} bounds the perturbation of the
+aggregated indeterminacy)---but a freshness layer's dominant exposure is value \emph{selection}, which
+\emph{value} to return among reachable peers, and coordinate-wise robustness on the $(T,I,F)$ triple does
+not govern that choice. The interpretation is a scope statement: the mechanism tolerates confidence
+inflation but not value fabrication, and closing the latter calls for a robust value-quorum, which we
+leave to future work.
+
+\subsection{Latency and throughput}
+On a real localhost HTTP testbed (Section~\ref{sec:methods}), the
+strategies separate into three latency tiers that confirm the communication-cost model
+(Supplementary Fig.~S3): a local read (naive-cache, $\approx 0$\,ms), a single round-trip
+(centralized, raft-lww, single-peer), a partial quorum (pbs-quorum), and a full $R$-peer fan-out
+(neutro-waa/wga, quorum-bool, lww-crdt). At a $5$\,ms per-hop RTT the neutrosophic layer's median
+decision latency is in the fan-out tier alongside quorum and CRDT---the measured price of decentralized
+decision-making, compared to a single hop for the centralized authority. (Absolute values include loopback
+runtime overhead; the operative cost axis is messages per decision, reported exactly in
+Supplementary Tables~S2 and~S3.) Supplementary Fig.~S4 reports measured
+throughput under concurrent load: the local and single-hop strategies sustain the highest
+decisions/sec, and the fan-out strategies (including ours) the lowest, consistent with their message
+cost. The same tiers hold on a containerized deployment (five peer containers plus a Redis bus and
+Postgres under Docker Compose): a single-hop read measures $\approx 9.6$\,ms median and the $R$-peer
+fan-out $\approx 26.4$\,ms median, confirming the result is not an artefact of the in-process harness.
+
+\paragraph{Decision latency under emulated WAN.} We harden the latency claim on the same containerized
+deployment with a Toxiproxy proxy injecting per-link latency, jitter, and loss
+(Supplementary Fig.~S7; single-host \emph{emulation}---real HTTP over real proxied sockets, not a
+geo-distributed cluster). The three communication patterns separate cleanly and the gap \emph{grows}
+with link latency: at a $1$\,ms LAN profile the median single-hop, majority-wait, and $R$-peer fan-out
+decisions are $3.1$, $8.3$, and $13.1$\,ms; at an $80\pm20$\,ms WAN profile they are $83$, $251$, and
+$418$\,ms (p99 $103$, $296$, $479$\,ms). The fan-out tail compounds because a decision waits for the
+slowest of $R$ peers, so jitter and---more sharply---loss inflate it: under $2\%$ packet loss the
+$R$-peer fan-out p99 rises to $1{,}330$\,ms (a dropped reply bounds the decision at the $1$\,s deadline)
+against $1{,}003$\,ms for the single hop. The measured price of decentralized decision making is thus a
+fan-out tail that grows with both latency and loss---the operative cost the message-count column
+abstracts, now quantified on real network paths. Absolute values remain host-bound (shared CPU/NIC); a
+geo-distributed multi-datacenter study is future work (Section~\ref{sec:threats}).
+
+\paragraph{Sensitivity.} The advantage is stable across replica counts $R\in\{3,5,7\}$ and grows with
+the cache ratio $\rho$ (Supplementary Fig.~S6): as more reads are unconfirmed, the gap between
+the neutrosophic layer and the eventual-consistency baselines widens, because that is exactly the
+regime in which the indeterminacy axis carries information.
+
+\subsection{Scalability and cross-domain generality}
+Sweeping the replica count $R\in\{2,\dots,50\}$ at fixed
+$\tau$ (Figure~\ref{fig:scalability}), the neutrosophic layer's stale-rate \emph{falls} monotonically
+with $R$---neutro-waa from $0.334$ at $R{=}2$ to $0.099$ at $R{=}50$, with availability rising from
+$0.805$ to $1.0$---at a per-decision message cost that scales linearly ($R$ messages, confirmed exactly
+in the sweep). More peers supply more evidence, so the aggregate is both more available and more correct.
+The contrast with the baselines is sharp: eventual consistency \emph{degrades} with scale (lww-crdt
+stale-rate rises from $0.367$ to $0.994$ as more replicas diverge), and the boolean quorum's availability
+stays low throughout ($0.28$--$0.41$). The layer therefore exhibits favourable scaling: adding peers improves rather than degrades decision
+quality.
+
+\paragraph{Cross-domain generality (S4).} To test whether the result is specific to e-commerce, S4
+instantiates a distinct domain---an ML online feature store (high version-lag and dirty-write rates,
+served largely from cache, high stale-cost; Section~\ref{sec:methods}). The Pareto-interior structure
+replicates: at $\varphi=0.1$ neutro-waa attains a stale-rate of $0.402$ at $0.953$ availability, fresher
+than eventual consistency (lww-crdt $0.427$ at $1.0$) and the single-probability gate (prob-gate $0.412$
+at $0.998$), and far more available than the boolean quorum ($0.452$ at only $0.451$); the graded operator
+trades more abstention ($0.626$ availability) for a markedly lower stale-rate ($0.327$). The regime is
+harder overall---every reader is staler than on the e-commerce scenarios---and the margins over the strong
+\emph{scalar} baselines are modest, consistent with the single-probability finding; but the qualitative
+advantage of retaining the $(T,I,F)$ signal carries to a second, structurally different domain.
+
+\paragraph{S3: clone catch-up.} A freshly cloned replica boots with every key absent and replays
+the logs-as-DSL stream one event at a time (Supplementary Fig.~S5). Recovered state grows linearly
+with events replayed; under the conservative SVNNWGA the clone drags cluster consensus to reject
+until it has nearly caught up (95\% acceptance after $48$ of $50$ events), whereas under the
+optimistic SVNNWAA the established peers carry every decision at $100\%$ acceptance throughout the
+catch-up window. The operator choice thus governs the availability-vs-strictness behavior precisely
+during the ``White Friday'' load-spike scenario (S3).
+
+\paragraph{Significance.} Table~\ref{tab:significance} lists the headline paired contrasts with
+Holm-corrected $p$-values and effect sizes; all are significant after correction, with large effect
+sizes for the comparisons against eventual consistency and the availability gain under partition.
+
+\input{tables/significance.tex}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.7\linewidth]{f3_pareto.pdf}
+\caption{Correctness/availability trade-off (S2, $\varphi=0.1$). Up-and-left is better; neutro-waa is
+on the Pareto frontier. Each system has a distinct marker; the strongly-consistent baselines centralized
+and raft-lww coincide at $(0,0.90)$ (circle behind cross).}\label{fig:pareto}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.7\linewidth]{f7_availability_partition.pdf}
+\caption{Availability without vs.\ with transient partition (S2, $\varphi=0.1$). The
+strongly-consistent baselines stall; the neutrosophic layer stays available.}\label{fig:partition}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.7\linewidth]{f11_operator_pareto.pdf}
+\caption{Axis A: the graded operator panel spreads a tunable correctness/availability frontier at fixed
+$\tau$ (S2, $\varphi=0.1$), from conservative (Acz\'el--Alsina) to optimistic (median/Krum), bracketed by
+the consistency baselines. On crisp inputs every operator collapses to WAA.}\label{fig:operator}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.7\linewidth]{f12_byzantine.pdf}
+\caption[Byzantine value-fabrication robustness (S2)]{Byzantine value-fabrication (S2, $\varphi=0.1$,
+$R=5$): the robust aggregators (median, Krum, trimmed mean) degrade together with the averaging operators
+as the adversary fraction grows---robust aggregation defends the gate (Lemma~\ref{lem:byz}), not value
+selection.}\label{fig:byzantine}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.95\linewidth]{f13_scalability.pdf}
+\caption{Scalability with replica count $R$ (S2, $\varphi=0.1$): the neutrosophic layer's stale-rate
+falls and availability rises with $R$ (at $R$ messages/decision), whereas eventual consistency degrades
+with scale and the boolean quorum stays low-availability.}\label{fig:scalability}\end{figure}
+
+%====================================================================
+\section{Discussion}
+\label{sec:discussion}
+
+The neutrosophic layer is worth its cost where decisions must continue under failure and where acting
+on a never-committed cached value is harmful---exactly the regime of fraud detection (S2) and
+clone-readiness (S3). It is \emph{not} worth it when strong consistency is mandatory (it does not reach
+zero staleness) or when a cheap naive read is correct enough (low $\varphi$, low dirty-write rates).
+The operator and threshold give an operator-tunable dial: optimistic WAA with a high $\tau$ for
+high-cost decisions, conservative WGA where abstaining is acceptable. The indeterminacy axis is the
+source of the gain: by refusing to collapse ``cached-unconfirmed'' into ``stale,'' the layer keeps
+making correct decisions where a boolean quorum must abstain.
+
+\paragraph{The DSL front-end is interchangeable.} State and rule messages are parsed by an ANTLR4
+grammar, but nothing in the decision layer depends on that choice: the parser only turns a message into
+a typed event for the rules engine, and the neutrosophic aggregation, gate, and protocol operate on the
+resulting $(T,I,F)$ views. ANTLR4 remains a standard generator---with \emph{antlr-ng} a current drop-in
+successor---and the front-end could equally be a tree-sitter grammar (incremental, linear-time), a
+Langium/LSP workbench, or a Lark grammar without altering any result in this paper. The contribution is
+the decision mechanism, not the parser; we keep ANTLR for its mature multi-target tooling.
+
+%====================================================================
+\paragraph{Threats to validity.}
+\label{sec:threats}
+
+\paragraph{Construct.} The layer is a freshness-decision mechanism, not a consensus protocol;
+comparisons to Raft/Paxos as if they did the same job would be invalid, so we use them only as
+reference points and make quorum-of-booleans the controlled comparison. ``Stale'' is defined against an
+oracle's causal-observation model; we unit-test the oracle.
+
+\paragraph{Internal.} $\tau$ and weights could be tuned to favor our arm; we fit them on held-out
+calibration seeds and freeze them. The paired seed design gives every strategy identical failure and
+arrival streams.
+
+\paragraph{External.} The correctness/availability evaluation is simulation-based on synthetic
+e-commerce workloads (sensitivity to $R$ and $\rho$ is probed in Supplementary Fig.~S6); how
+faithfully these map to production microservice traces is untested, and replaying real traces is future
+work. Decision latency is measured on a \emph{real} HTTP testbed---in-process and on a single-host Docker
+Compose deployment---which confirms the communication tiers, but the \emph{absolute} values include local
+runtime overhead and a shared host NIC; we therefore read the latency result as the \emph{relative}
+ordering of the tiers, not as milliseconds. An \emph{emulated}-WAN study under injected per-link latency,
+jitter, and loss (Supplementary Fig.~S7) confirms the tiers and tail behaviour on real network paths, but
+it is single-host; a \emph{geo-distributed} multi-datacenter study remains future work.
+Three further limitations bound the scope: (i)~the protocol assumes a \emph{static} reachable peer set
+per decision---service churn, elastic scale-out, and dynamic membership are not modeled and would need a
+membership/discovery layer beneath the gate; (ii)~the DSL event bus adds an operational hop and
+serialization cost that a production deployment must budget; and (iii)~adversarial behavior is studied in
+simulation (Figure~\ref{fig:byzantine}) under a value-fabrication model, so a real-testbed adversarial
+study and the robust value-quorum that Proposition~\ref{prop:valbyz} calls for remain future work.
+
+\paragraph{Conclusion.} Latency-like quantities are heavy-tailed, so we use nonparametric paired tests
+and report effect sizes with bootstrap CIs; multiple comparisons are Holm-corrected within a-priori
+families; cross-seed non-replication ($2\%$ of cells) is flagged and excluded from headline claims.
+
+%====================================================================
+\paragraph{Conclusion.}
+\label{sec:conclusion}
+
+We developed a decentralized neutrosophic decision layer for microservice global-state freshness---a
+protocol, formal safety and liveness guarantees, and a reproducible evaluation---and showed that
+encoding persistence as a $(T,I,F)$ triple and fusing peer views with weighted neutrosophic operators
+yields a decision layer on the Pareto interior between strong and eventual consistency: markedly fewer stale decisions than eventual-consistency baselines,
+sustained availability under partition where a strongly-consistent primary stalls, and a clear
+advantage over a boolean quorum that isolates the value of the indeterminacy axis. We claim no
+superiority over consensus protocols; the contribution is a transparent, calibrated, and fully
+reproducible trade-off.
+
+\paragraph{Future work.} The clearest next step is a Byzantine-robust \emph{value} quorum beneath the
+gate---Proposition~\ref{prop:valbyz} shows it is needed to close the value-fabrication gap that gate
+robustness alone leaves open. Further directions: hardening the deployment study toward geo-distributed,
+multi-datacenter operation; replaying production microservice traces in place of synthetic workloads;
+learned, reputation-weighted peer weights; and dynamic membership and service churn beneath the gate.
+
+%====================================================================
+\section{Methods}
+\label{sec:methods}
+
+\begin{figure}[t]
+\centering
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
+\begin{tikzpicture}[>={Stealth[length=2.2mm]}, font=\footnotesize,
+  svc/.style={draw,rounded corners,fill=blue!6,minimum width=22mm,minimum height=11mm,align=center},
+  op/.style={draw,rounded corners,fill=gray!12,minimum width=20mm,minimum height=9mm,align=center},
+  gatebox/.style={draw,rounded corners,fill=green!14,minimum width=30mm,minimum height=9mm,align=center}]
+  \node[draw,fill=orange!14,minimum width=84mm,minimum height=6mm] (bus)
+       {event bus: JSON \emph{state}/\emph{rule} messages (DSL, ANTLR-parsed)};
+  \node[svc,below=10mm of bus] (p2) {Peer $p_2$\\cache\,/\,DB $\to(T,I,F)$};
+  \node[svc,left=10mm of p2] (p1) {Peer $p_1$\\cache\,/\,DB $\to(T,I,F)$};
+  \node[svc,right=10mm of p2] (pn) {Peer $p_n$\\cache\,/\,DB $\to(T,I,F)$};
+  \foreach \p in {p1,p2,pn} \draw[<->] (\p.north) -- (\p.north|-bus.south);
+  \node[op,below=12mm of p2] (agg) {Aggregate $\oplus$};
+  \node[op,right=8mm of agg] (sc) {Score $s$};
+  \node[gatebox,right=8mm of sc] (gate) {Act\,/\,Abstain ($s\!\ge\!\tau$)};
+  \foreach \p in {p1,p2,pn} \draw[->] (\p) -- (agg);
+  \draw[->] (agg) -- (sc); \draw[->] (sc) -- (gate);
+  \node[font=\scriptsize,left=1mm of agg.north west,anchor=south east] {$(T,I,F)$ views};
+\end{tikzpicture}}
+\caption{The decentralized neutrosophic decision layer. Sovereign peers exchange JSON state/rule
+messages over an event bus and tag each value's storage status as a single-valued neutrosophic number;
+a deciding service fuses the reachable peers' $(T,I,F)$ views with an aggregation operator,
+deneutrosophizes to a score $s$, and acts on a value or abstains against a calibrated threshold
+$\tau$---with no central authority.}
+\label{fig:system}
+\end{figure}
+
+\subsection{Neutrosophic preliminaries}
+A single-valued neutrosophic number (SVNN) is a triple $z=(T,I,F)$ with $T,I,F\in[0,1]$ denoting
+independent truth-, indeterminacy-, and falsity-membership~\cite{wang2010svns}. We map a data item's
+storage status to canonical SVNNs: \emph{persisted} $=(1,0,0)$, \emph{cached} $=(0,1,0)$, and
+\emph{absent} $=(0,0,1)$. An unseen value reads as falsity rather than indeterminacy, which matters
+because a missing or partitioned peer contributes the absent state; encoding absent as $(0,0,1)$ rather
+than $(0,1,0)$~\cite{elghareeb2020neutro} keeps it distinct from \emph{cached}.
+
+Given peer views $z_1,\dots,z_n$ with normalized weights $w_j$, the SVNN weighted arithmetic and
+geometric averaging operators are
+\begin{align}
+\mathrm{SVNNWAA} &= \Big(1-\textstyle\prod_j (1-T_j)^{w_j},\ \prod_j I_j^{w_j},\ \prod_j F_j^{w_j}\Big),
+\label{eq:waa}\\
+\mathrm{SVNNWGA} &= \Big(\textstyle\prod_j T_j^{w_j},\ 1-\prod_j (1-I_j)^{w_j},\ 1-\prod_j (1-F_j)^{w_j}\Big).
+\label{eq:wga}
+\end{align}
+We evaluate the products in log space for numerical stability at large $n$. The deneutrosophy score
+$s(z)=(2+T-I-F)/3\in[0,1]$~\cite{ye2014score} collapses an aggregate to a crisp confidence; a service
+\emph{acts} iff $s\geq\tau$ for a calibrated threshold $\tau$. SVNNWAA is optimistic: a single
+persisted peer ($T=1$) carries the decision. SVNNWGA is conservative: a single uncommitted or absent
+peer ($T=0$) vetoes the aggregate truth.
+
+\subsection{Architecture, DSL, and rules engine}
+The testbed uses a conventional e-commerce decomposition (products, orders, users, front-end);
+Figure~\ref{fig:system} shows the overall decision layer. Each
+service holds a two-tier (cache/database) store that tags every value with its $(T,I,F)$ status, and
+services exchange JSON \emph{state} and \emph{rule} messages over a lightweight event bus, never
+reading each other's stores directly. Both message kinds are the DSL: microservice logs are JSON
+parsed by an ANTLR grammar into a tree walked by generated listeners/visitors. Business rules
+(Yin et al.\ tag sets) are JSON parsed by the same pipeline and evaluated against facts, so a rule is
+data, changeable without redeploying a service.
+
+\subsection{The decentralized decision protocol}
+For a key under decision, each reachable peer reports its SVNN view; unreachable peers contribute the
+absent state $(0,0,1)$. The deciding node aggregates with Eq.~\eqref{eq:waa} or~\eqref{eq:wga},
+deneutrosophizes, and \emph{acts} (serving the value confirmed by the persisted peers, falling back to
+cached holders) iff $s\geq\tau$, else \emph{abstains}. No central node participates. This is a
+freshness decision, not replication: it never establishes agreement on a log; it decides whether the
+value a service already holds is trustworthy enough to act on.
+
+\begin{algorithm}[t]
+\caption{Decentralized neutrosophic freshness decision for key $k$}
+\label{alg:decide}
+\begin{algorithmic}[1]
+\Require peers $P$, weights $w$, operator $\oplus\in\{\mathrm{SVNNWAA},\mathrm{SVNNWGA}\}$, threshold $\tau$
+\State $Z \gets \{\}$
+\For{$p \in P$}
+  \State $z_p \gets$ \Call{Query}{$p,k$} \textbf{if} $p$ reachable \textbf{else} $(0,0,1)$ \Comment{absent reads as falsity}
+  \State $Z \gets Z \cup \{(p, z_p)\}$
+\EndFor
+\State $\bar{z} \gets \oplus(\{z_p\}, w)$ \Comment{Eq.~\eqref{eq:waa} or~\eqref{eq:wga}}
+\State $s \gets (2 + \bar{z}.T - \bar{z}.I - \bar{z}.F)/3$ \Comment{deneutrosophy}
+\If{$s \ge \tau$}
+  \State \Return \Call{Act}{majority value among persisted (else cached) peers}
+\Else
+  \State \Return \textsc{Abstain}
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Two-axis enrichment: operators, encoding, tuning, and adversaries}
+\label{sec:enrich}
+The submitted layer fixes one aggregation pair (Eqs.~\eqref{eq:waa}--\eqref{eq:wga}), one
+deneutrosophy score, uniform weights, and a probabilistic failure model. To test whether any of these
+choices drives the result, each is generalised into an equal-footing panel and varied one axis at a
+time; the submitted configuration is the anchor and is reproduced exactly. Supplementary Fig.~S9
+shows the audit pipeline.
+
+\paragraph{Axis A: aggregation operator.} Beyond the optimistic SVNNWAA and conservative SVNNWGA, a
+panel of single-valued neutrosophic weighted operators is evaluated: Einstein and Hamacher
+t-norm/t-conorm aggregations, the Dombi~\cite{dombi1982} and Acz\'el--Alsina~\cite{aczel1982}
+operators (each with a parameter that recovers the arithmetic mean at a limit, verified as a
+correctness check), and the Bonferroni mean, which aggregates every ordered peer pair and so captures
+interrelation that a marginal average ignores. Holding the peer evidence fixed and swapping only the
+operator isolates the effect of the aggregation rule.
+
+\paragraph{Graded encoding.} On crisp inputs all $t$-conorm operators collapse to the same output---any
+persisted peer drives aggregate truth to one---so the operators differentiate only when peer views are
+graded. Each peer's
+view is therefore softened by an \emph{observable} recency signal, its version lag relative to the
+most up-to-date reachable peer, requiring no oracle: a fresh persisted peer reads near $(1,0,0)$; a
+stale persisted peer shifts mass to falsity; a cached peer carries high indeterminacy that decays with
+lag; and a peer holding a lone anomalously high version is treated as a suspected dirty (uncommitted)
+write. The crisp encoding is retained as the conservative baseline, so the contrast also measures what
+graded confidence adds over a boolean status. Algorithm~\ref{alg:grade} states the encoding from the
+observable versions alone.
+
+\begin{algorithm}[t]
+\caption{Graded confidence encoding from observable version lag}
+\label{alg:grade}
+\begin{algorithmic}[1]
+\Require reachable peer views $P$ with versions; lag scale $\sigma$
+\State $v_{\max}\gets \max_{p\in P}\mathrm{ver}(p)$;\quad $v_{2}\gets$ second-largest version in $P$
+\For{$p\in P$}
+  \State $\ell \gets v_{\max}-\mathrm{ver}(p)$ \Comment{relative lag; no oracle}
+  \State $\phi \gets 1/(1+\ell/\sigma)$ \Comment{freshness: $1$ at $\ell{=}0$, $\to 0$ as $\ell$ grows}
+  \State $\mathit{dirty}\gets [\,\mathrm{ver}(p)>v_{2}\,\wedge\,\mathrm{status}(p)=\textsc{cached}\,]$ \Comment{lone high version}
+  \State $z_p\gets \textsc{Grade}(\mathrm{status}(p),\phi,\mathit{dirty})$ \Comment{$\to(T,I,F)$, Sec.~\ref{sec:enrich}}
+\EndFor
+\State unreachable peers contribute $\textsc{Grade}(\textsc{absent},\cdot,\cdot)$
+\State \Return $\{z_p\}$
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Axis A$'$: deneutrosophy score.} The score $s(z)=(2+T-I-F)/3$~\cite{ye2014score} is one
+choice among several. An accuracy-degree score (truth less falsity), a cosine measure to the truth
+ideal, and a truth-weighted score are compared as a robustness ablation, to confirm that the freshness
+result does not hinge on the particular deneutrosophy.
+
+\paragraph{Axis B: weight and threshold tuning.} The hand-fit $\tau$ and uniform weights are replaced,
+in an audit arm, by tuning the full vector $[\tau, w_1,\dots,w_R]$ against the held-out calibration
+utility at an \emph{identical} evaluation budget across seven optimisers---uniform random search,
+differential evolution~\cite{storn1997de}, CMA-ES~\cite{hansen2001cmaes}, particle-swarm
+optimisation~\cite{kennedy1995pso}, a tree-structured Parzen estimator, the physics-based RIME
+optimiser~\cite{su2023rime}, and the Ninja Optimisation Algorithm~\cite{elkenawy2024nioa}. Because the
+budget, not the per-iteration mechanism, is the fair unit, the comparison asks---in the spirit of the
+No-Free-Lunch theorem~\cite{wolpert1997nfl}---whether the optimiser choice matters once compute is
+held equal. The Ninja Optimisation Algorithm has no public reference implementation and is
+reconstructed from its published structure with disclosed coefficients; it is a provisional panel
+member under test, never a hero method.
+
+\paragraph{Byzantine faults and robust aggregation.} The submitted failure model is probabilistic. An
+adversarial arm injects Byzantine peers that claim \textsc{persisted} while holding a fabricated value
+at an inflated version---the worst case for an optimistic operator and for majority value selection.
+Three robust aggregators then replace the averaging rule: the coordinate-wise median and trimmed mean,
+which tolerate a strict minority of adversarial triples~\cite{yin2018byzantine}, and
+Krum~\cite{blanchard2017krum}, which selects the peer triple closest to its neighbours.
+Section~\ref{sec:formal} bounds their resistance at the act/abstain gate; unlike PBFT-style
+agreement~\cite{castro2002pbft}, the freshness gate does not attempt cross-peer consensus on a value.
+A freshness-SLO reader---a per-read dual of adaptive-freshness schedulers~\cite{wooders2024ralf} and
+consistency-based SLAs~\cite{terry2013pileus,bailis2012pbs} that acts only when the latest value is
+confirmed-committed---is added so the adaptive-consistency line the layer is positioned against is
+compared empirically, not only in prose. Algorithm~\ref{alg:robust} states the robust gate.
+
+\begin{algorithm}[t]
+\caption{Byzantine-robust freshness gate}
+\label{alg:robust}
+\begin{algorithmic}[1]
+\Require graded views $Z=\{z_p\}$; threshold $\tau$; rule $\rho\in\{\textsc{median},\textsc{trimmed},\textsc{krum}\}$; assumed adversaries $f$
+\If{$\rho=\textsc{median}$} \State $\bar z\gets$ coordinate-wise median of $Z$
+\ElsIf{$\rho=\textsc{trimmed}$} \State $\bar z\gets$ coordinate-wise mean of $Z$ after dropping the $f$ smallest and $f$ largest per axis
+\ElsIf{$\rho=\textsc{krum}$} \State $\bar z\gets \arg\min_{z\in Z}\ \textstyle\sum$ of squared distances from $z$ to its $|Z|-f-2$ nearest views
+\EndIf
+\State $s\gets(2+\bar z.T-\bar z.I-\bar z.F)/3$
+\State \Return \textsc{Act} on the persisted-majority value \textbf{if} $s\ge\tau$ \textbf{else} \textsc{Abstain}
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Complexity.} A decision issues a single query round to the $R$ reachable peers, so the
+\emph{communication} cost is $O(|R|)$ messages per decision---one round-trip per peer ($O(1)$ for the
+local and single-hop baselines, $O(|R|)$ for every fan-out strategy, reported exactly in
+Supplementary Tables~S2 and~S3). The \emph{computation} per decision is $O(|R|)$ for
+the averaging operators (a single linear fold of the $R$ weighted triples), with the deneutrosophy score
+and gate $O(1)$; the Byzantine-robust aggregators cost $O(|R|\log|R|)$ (coordinate-wise median, trimmed
+mean) or $O(|R|^2)$ (Krum's pairwise-distance selection). Memory is $O(|R|)$ for the collected views. The
+layer's per-decision cost is therefore $O(|R|)$ with the averaging operators---the same order as the
+quorum read it performs---and super-linear only for the optional robust aggregators.
+
+\subsection{Formal properties}
+\label{sec:formal}
+The protocol is analysed under the crisp encoding (peers report the corners $(1,0,0)$, $(0,1,0)$,
+$(0,0,1)$ for persisted, cached, absent); the graded encoding interpolates the gate continuously
+between the bounds below. Let $R$ be the set of reachable peers with normalized weights $w_j$ (the
+results below hold for arbitrary $w_j$, hence for the tuned weights of Axis~B).
+
+\begin{proposition}[one-round termination, partition tolerance]\label{prop:terminate}
+Algorithm~\ref{alg:decide} issues exactly one query round and always returns \textsc{Act} or
+\textsc{Abstain}; it never blocks, for any pattern of failures or partitions.
+\end{proposition}
+\begin{proof}
+The loop visits each peer once; unreachable peers contribute $(0,0,1)$ rather than waiting, so the gate
+$s\ge\tau$ is a total function of the collected views.
+\end{proof}
+\noindent The layer is therefore always available in the CAP sense, trading consistency for
+availability: a partitioned side decides from its local view alone.
+
+\begin{lemma}[SVNNWGA conservative safety]\label{lem:wga}
+Under SVNNWGA with $\tau\in(\tfrac13,1]$, the layer acts only if \emph{every} reachable peer reports
+\textsc{persisted}.
+\end{lemma}
+\begin{proof}
+$\bar z.T=\prod_{j\in R}T_j^{w_j}=0$ once any reachable peer has $T_j=0$ (cached or absent); that peer
+has $I_j=1$ or $F_j=1$, so $\bar z.I=1-\prod(1-I_j)^{w_j}=1$ or $\bar z.F=1-\prod(1-F_j)^{w_j}=1$, giving
+$s=(2+0-\bar z.I-\bar z.F)/3\le\tfrac13<\tau$. A non-unanimous round therefore abstains.
+\end{proof}
+
+\begin{lemma}[SVNNWAA optimistic liveness]\label{lem:waa}
+Under SVNNWAA with $\tau\le1$, the layer acts whenever at least one reachable peer reports
+\textsc{persisted}.
+\end{lemma}
+\begin{proof}
+$\bar z.T=1-\prod_{j\in R}(1-T_j)^{w_j}=1$ once any $T_j=1$; that persisted peer has $I_j=F_j=0$, so
+$\bar z.I=\prod I_j^{w_j}=0$ and $\bar z.F=\prod F_j^{w_j}=0$, whence $s=1\ge\tau$.
+\end{proof}
+
+\noindent Lemmas~\ref{lem:wga}--\ref{lem:waa} bracket the gate for the \emph{crisp} encoding under
+arbitrary weights $w_j$: every panel operator (Einstein, Hamacher, Dombi, Acz\'el--Alsina, Bonferroni)
+acts on a condition between ``some persisted'' (SVNNWAA) and ``all persisted'' (SVNNWGA). The next
+proposition lifts this to the \emph{graded} encoding and tuned weights, answering ``what does safety mean
+when the encoding is graded and the weights are tuned?''.
+
+\begin{proposition}[graded envelope and monotonicity]\label{prop:graded}
+Let each reachable peer carry the graded triple induced by its freshness $\varphi_j=1/(1+\ell_j/\sigma)$
+(version-lag $\ell_j$, softness $\sigma$; Algorithm~\ref{alg:grade}), under arbitrary normalized weights
+$w_j$. For every panel operator the deneutrosophied score $s$ is non-decreasing in each $\varphi_j$.
+Consequently the acting set $\{\,s\ge\tau\,\}$ is monotone non-increasing in the threshold $\tau$ and
+monotone non-decreasing in the softness $\sigma$, and is contained between the SVNNWAA and SVNNWGA acting
+sets.
+\end{proposition}
+\begin{proof}
+Each operator is a weighted t-conorm/t-norm, coordinate-wise monotone in $(T,I,F)$; the graded map sends
+larger $\varphi_j$ to larger $T_j$ and smaller $I_j,F_j$, and composition preserves monotonicity, so $s$
+is non-decreasing in every $\varphi_j$. Raising $\tau$ only removes views from the super-level set
+$\{s\ge\tau\}$; $\varphi_j$ is increasing in $\sigma$, so increasing $\sigma$ raises $s$ and enlarges the
+set. The envelope holds because every weighted mean lies between its product (SVNNWGA) and co-product
+(SVNNWAA) aggregates.
+\end{proof}
+
+\begin{corollary}[bounded staleness of acted values under SVNNWGA]\label{cor:lag}
+Under SVNNWGA with the graded encoding and $\tau\in(\tfrac13,1]$, the layer acts only when every reachable
+peer has freshness $\varphi_j\ge\varphi_\tau$ for a threshold $\varphi_\tau$ fixed by $\tau$; equivalently
+every acted value comes from peers whose version-lag satisfies $\ell_j\le\sigma(1-\varphi_\tau)/\varphi_\tau$.
+The staleness of any acted value is therefore bounded \emph{a priori} by
+$\sigma(1-\varphi_\tau)/\varphi_\tau$, which the operator and $\tau$ control directly.
+\end{corollary}
+\begin{proof}
+By Proposition~\ref{prop:graded} SVNNWGA has the smallest acting set; its geometric truth aggregate
+$\prod_j\varphi_j^{w_j}$ clears the gate only if every factor does, giving the per-peer floor
+$\varphi_\tau$; invert $\varphi_j=1/(1+\ell_j/\sigma)$.
+\end{proof}
+
+\begin{lemma}[Byzantine gate resistance]\label{lem:byz}
+Let $b$ reachable peers be Byzantine, each reporting an arbitrary triple, with $b<\lceil R/2\rceil$ so
+honest peers hold a strict majority \emph{in every coordinate}. Under a coordinate-wise median aggregate,
+each of $\bar z.T,\bar z.I,\bar z.F$ lies between two honest order statistics; the gate score equals the
+honest-only median, and the adversaries cannot force $s\ge\tau$ when the honest majority would abstain.
+\end{lemma}
+\begin{proof}
+With $b<\lceil R/2\rceil$ corruptions the median of $R$ values in each coordinate is bracketed by honest
+order statistics; the score is a fixed monotone function of the three coordinate medians.
+\end{proof}
+
+\noindent Lemma~\ref{lem:byz} protects the \emph{gate}---the act/abstain confidence---but not the
+\emph{value} returned. We state that gap precisely, as it is the layer's dominant adversarial exposure.
+
+\begin{proposition}[value selection is not Byzantine-robust]\label{prop:valbyz}
+The value returned on \textsc{Act} is the majority value among peers reporting \textsc{persisted}
+(Algorithm~\ref{alg:decide}). Coordinate-wise robustness of the gate does not constrain this choice: if
+$b\ge1$ Byzantine peers report \textsc{persisted} on a common fabricated value at an inflated version and
+the honest persisted peers do not strictly outnumber them, the fabricated value can be selected even
+though the gate is satisfied. Hence gate-robustness does not imply value-robustness.
+\end{proposition}
+\begin{proof}
+The gate aggregate is invariant to which value underlies a \textsc{persisted} report; value selection is a
+separate majority over reported values, which a colluding block of size at least the honest persisted
+count can win.
+\end{proof}
+
+\noindent This matches Figure~\ref{fig:byzantine} (robust and averaging readers degrade together under
+value fabrication) and pinpoints the fix: a Byzantine-robust \emph{value} quorum beneath the gate, which
+we leave to future work (Section~\ref{sec:threats}).
+
+\begin{theorem}[committed-value safety, non-adversarial model]\label{thm:safety}
+In the crash/partition (non-adversarial) model, under SVNNWGA with $\tau\in(\tfrac13,1]$ the layer never
+acts on a value that was never committed.
+\end{theorem}
+\begin{proof}
+By Lemma~\ref{lem:wga} SVNNWGA acts only on a unanimous \textsc{persisted} round; a truthful
+\textsc{persisted} report on the single-writer ground truth marks a committed value, so the served
+majority value is committed.
+\end{proof}
+
+\paragraph{Split-brain.} By Proposition~\ref{prop:terminate} each side of a partition decides
+independently in one round, so neither blocks. By Lemma~\ref{lem:wga} an SVNNWGA side acts only on
+unanimous local confirmation; with a single-writer ground truth it then serves the value its persisted
+peers hold, and the layer never asserts cross-partition agreement --- consistent with its stated scope as
+a freshness gate above the consistency substrate, not a consensus protocol.
+
+\subsection{Scenarios and ground truth}
+Four scenarios instantiate the study. Three are e-commerce: (S1) personalized dynamic pricing
+(read-heavy), (S2) suspicious-order fraud detection (asymmetric cost---a missed fraud is worse than a
+false alarm), and (S3) ``White Friday'' load-spike with stateful container cloning, where a fresh replica
+catches up by replaying the logs-as-DSL stream. The fourth probes a \emph{distinct} domain to test
+cross-domain generality: (S4) an ML \emph{online feature store}, where features are updated frequently
+(high version-lag and dirty-write rates), served largely from cache, and a stale served feature degrades
+a downstream prediction (high stale-cost)---a stylized but timely regime, not real traces (replaying
+production traces remains future work, Section~\ref{sec:threats}). A privileged \emph{oracle}---written
+only by the workload, never by
+a service---records the totally ordered commits and reconstructs the true global state at any logical
+time. A decision is \emph{stale} iff the value acted on differs from the oracle's true value.
+
+\subsection{Baselines}
+We compare eight decision strategies on identical decision streams: our \textbf{neutro-waa} and
+\textbf{neutro-wga}; \emph{centralized} (a strongly-consistent authority---the correctness ceiling);
+\emph{raft-lww} (a leader's committed value); \emph{quorum-bool} (majority vote over boolean
+fresh/stale flags---the directly comparable control that isolates the value of $(T,I,F)$ versus a bit);
+\emph{prob-gate} (a calibrated single-probability gate that collapses the same evidence into one
+Bayesian freshness posterior $p=(a{+}1)/(a{+}b{+}2)$ and acts iff $p\ge\tau$---the sharper control that
+isolates $(T,I,F)$ vs.\ a single scalar); \emph{pbs-quorum} (a probabilistically-bounded-staleness
+partial-quorum reader~\cite{bailis2012pbs}, the nearest prior art); \emph{lww-crdt} (eventually
+consistent last-writer-wins); \emph{single-peer}; and \emph{naive-cache} (local read, no
+coordination---the floor).
+
+\subsection{Experimental design and statistics}
+Each cell is $(\text{scenario},\text{system},\varphi,\text{partition})$ at $R=5$ replicas, cache
+ratio $\rho=0.5$, with failure-injection rate $\varphi\in\{0,0.1,0.2,0.3\}$ and partition
+$\in\{\text{none},\text{transient}\}$; the workload models clean-cached, dirty-cached (an uncommitted
+later write---the dirty-read phenomenon), persisted-latest, confidently-stale-persisted, and absent
+peers. Each cell runs $50$ repetitions of $300$ decisions under five master seeds---$250$ repetitions
+per cell. The environment RNG excludes the system name, so every strategy sees the \emph{identical}
+decision and failure stream (a paired design). \emph{Unit of analysis.} Each repetition contributes one
+summary statistic (its mean stale-rate or availability over its $300$ decisions), and every significance
+test pairs strategies \emph{at the repetition level}: the sample size of each paired test is the number
+of repetitions ($n=250$ per cell), not the number of individual decisions, so within-repetition
+correlation among decisions does not inflate the effective $n$. The acceptance threshold $\tau$ is fit
+per (scenario, operator) on \emph{held-out} calibration seeds by maximizing availability minus a
+per-scenario cost on the stale-rate, then frozen. A single canonical aggregator emits all tables and
+figures; it asserts a common calibration hash across inputs and refuses to mix files that disagree (R6).
+For full transparency the locked calibration's canonical-JSON SHA-256 is
+{\footnotesize\ttfamily 16dc5ef33908a3723eb896b1bba1129ed147643f8a3bef4a55c459f9ec836070}. The aggregator
+computes stale-rate over acted decisions (success-only) and availability separately, applies Holm
+correction within a-priori comparison families, reports paired Cohen's $d$ with 5000-resample bootstrap
+95\% CIs, and flags any cell whose headline contrast does not replicate in sign across all five seeds.
+
+Correctness and availability come from this discrete-event simulation, which scales to many cells;
+\emph{decision latency} is measured separately on a real testbed: each peer is a live ASGI endpoint
+and the deciding node drives it with a real asynchronous HTTP client, so every strategy executes its
+true communication pattern (one hop, wait-for-majority, or wait-for-all plus real SVNN aggregation)
+over real sockets with a configurable per-hop RTT. A Docker Compose deployment of the same topology
+(per-service containers plus a Redis event bus) is provided for fidelity and reuse.
+
+%====================================================================
+\section*{Data availability}
+This study uses no third-party datasets: all data are generated by the evaluation simulator under the
+content-hashed calibration (\texttt{calibration.json}) and the recorded random seeds described in the
+Methods. The aggregated result tables that underlie every figure and table
+(\texttt{per\_config\_summary.csv}, \texttt{pairwise\_tests.csv}, \texttt{multiseed\_validation.csv}, and
+the per-experiment tables) are provided as Supplementary Information and are available from the
+corresponding author on reasonable request; together with the figure and table generators they regenerate
+every reported number. The raw per-trial outputs will be released publicly under an open licence upon
+acceptance.
+
+\section*{Code availability}
+The implementation (neutrosophic operators, the ANTLR-based DSL and rules engine, the decision protocol,
+the baselines, and the evaluation harness) is available from the corresponding author on reasonable
+request during peer review and will be made publicly available under an open-source (MIT) licence upon
+acceptance. Dependency versions are pinned and the generated parser is included, so no Java toolchain is
+needed to reproduce the results.
+
+\section*{Author contributions}
+H.A.E. conceived and designed the study, implemented the system, performed the experiments, analysed the
+data, and wrote the manuscript.
+
+\section*{Competing interests}
+The author declares no competing interests.
+
+\section*{Funding}
+The author received no specific funding for this work.
+
+\section*{Use of large language models}
+A large language model (Claude, Anthropic) assisted with code scaffolding and manuscript drafting under
+the author's direction; the author reviewed and verified all content and is solely responsible for it.
+
+\bibliographystyle{naturemag}
+\bibliography{refs}
+
+\end{document}

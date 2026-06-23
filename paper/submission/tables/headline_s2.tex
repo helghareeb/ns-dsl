@@ -1,0 +1,30 @@
+\begin{table}[t]
+\centering
+\small
+\caption{Headline results for S2 at $\varphi=0.1$ (30 reps/cell, 3 seeds; stale-rate with 5000-resample bootstrap 95\% CI). All cells \texttt{validated}.}
+\label{tab:headline-s2}
+\begin{tabular}{llccc}
+\toprule
+System & Partition & Stale-rate [95\% CI] & Availability & Msgs/dec \\
+\midrule
+Centralized & none & 0.000 [0.000, 0.000] & 0.900 & 1 \\
+Raft-LWW & none & 0.000 [0.000, 0.000] & 0.900 & 1 \\
+\textbf{Neutro-WAA} & none & 0.248 [0.244, 0.251] & 0.942 & 5 \\
+\textbf{Neutro-WGA} & none & 0.237 [0.232, 0.242] & 0.427 & 5 \\
+Quorum-bool & none & 0.263 [0.257, 0.268] & 0.402 & 5 \\
+PBS-quorum & none & 0.349 [0.346, 0.353] & 1.000 & 3 \\
+LWW-CRDT & none & 0.415 [0.411, 0.418] & 1.000 & 5 \\
+Single-peer & none & 0.450 [0.446, 0.453] & 1.000 & 1 \\
+Naive-cache & none & 0.506 [0.503, 0.509] & 1.000 & 0 \\
+Centralized & transient & 0.000 [0.000, 0.000] & 0.453 & 1 \\
+Raft-LWW & transient & 0.000 [0.000, 0.000] & 0.453 & 1 \\
+\textbf{Neutro-WAA} & transient & 0.263 [0.260, 0.266] & 0.880 & 5 \\
+\textbf{Neutro-WGA} & transient & 0.240 [0.235, 0.245] & 0.332 & 5 \\
+Quorum-bool & transient & 0.223 [0.218, 0.227] & 0.410 & 5 \\
+PBS-quorum & transient & 0.348 [0.345, 0.351] & 0.996 & 3 \\
+LWW-CRDT & transient & 0.380 [0.377, 0.384] & 0.996 & 5 \\
+Single-peer & transient & 0.450 [0.446, 0.453] & 0.996 & 1 \\
+Naive-cache & transient & 0.506 [0.503, 0.510] & 1.000 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}

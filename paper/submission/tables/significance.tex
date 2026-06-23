@@ -1,0 +1,19 @@
+\begin{table}[t]
+\centering\small
+\caption{Headline paired contrasts (S2, $\varphi=0.1$): paired Wilcoxon, Holm-corrected within family; Cohen's $d$ from paired differences (250 trials/cell).}
+\label{tab:significance}
+\begin{tabular}{lllcc}
+\toprule
+Metric & Contrast & Partition & Cohen's $d$ & $p_{\mathrm{holm}}$ \\
+\midrule
+stale-rate & neutro-waa vs.\ lww-crdt & none & -4.42 & 7.9e-40 \\
+stale-rate & neutro-waa vs.\ lww-crdt & transient & -3.25 & 7.9e-40 \\
+stale-rate & neutro-waa vs.\ naive-cache & none & -8.10 & 7.9e-40 \\
+stale-rate & neutro-waa vs.\ naive-cache & transient & -7.44 & 7.9e-40 \\
+stale-rate & neutro-waa vs.\ quorum-bool & none & -0.48 & 3.5e-10 \\
+stale-rate & neutro-waa vs.\ quorum-bool & transient & +1.48 & 1.5e-37 \\
+availability & neutro-waa vs.\ centralized & none & +1.82 & 7.6e-40 \\
+availability & neutro-waa vs.\ centralized & transient & +12.56 & 7.2e-40 \\
+\bottomrule
+\end{tabular}
+\end{table}

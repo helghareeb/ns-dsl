@@ -1,0 +1,350 @@
+\begin{thebibliography}{10}
+\expandafter\ifx\csname url\endcsname\relax
+  \def\url#1{\texttt{#1}}\fi
+\expandafter\ifx\csname urlprefix\endcsname\relax\def\urlprefix{URL }\fi
+\providecommand{\bibinfo}[2]{#2}
+\providecommand{\eprint}[2][]{\url{#2}}
+
+\bibitem{soldani2018pains}
+\bibinfo{author}{Soldani, J.}, \bibinfo{author}{Tamburri, D.~A.} \&
+  \bibinfo{author}{Van Den~Heuvel, W.-J.}
+\newblock \bibinfo{title}{The pains and gains of microservices: A systematic
+  grey literature review}.
+\newblock \emph{\bibinfo{journal}{Journal of Systems and Software}}
+  \textbf{\bibinfo{volume}{146}}, \bibinfo{pages}{215--232}
+  (\bibinfo{year}{2018}).
+
+\bibitem{pardon2018bac}
+\bibinfo{author}{Pardon, G.}, \bibinfo{author}{Pautasso, C.} \&
+  \bibinfo{author}{Zimmermann, O.}
+\newblock \bibinfo{title}{Consistent disaster recovery for microservices: the
+  {BAC} theorem}.
+\newblock \emph{\bibinfo{journal}{IEEE Cloud Computing}}
+  \textbf{\bibinfo{volume}{5}}, \bibinfo{pages}{49--59} (\bibinfo{year}{2018}).
+
+\bibitem{abadi2012consistency}
+\bibinfo{author}{Abadi, D.}
+\newblock \bibinfo{title}{Consistency tradeoffs in modern distributed database
+  system design: {CAP} is only part of the story}.
+\newblock \emph{\bibinfo{journal}{Computer}} \textbf{\bibinfo{volume}{45}},
+  \bibinfo{pages}{37--42} (\bibinfo{year}{2012}).
+
+\bibitem{laigner2021data}
+\bibinfo{author}{Laigner, R.}, \bibinfo{author}{Zhou, Y.},
+  \bibinfo{author}{Salles, M. A.~V.}, \bibinfo{author}{Liu, Y.} \&
+  \bibinfo{author}{Kalinowski, M.}
+\newblock \bibinfo{title}{Data management in microservices: State of the
+  practice, challenges, and research directions}.
+\newblock \emph{\bibinfo{journal}{Proceedings of the VLDB Endowment}}
+  \textbf{\bibinfo{volume}{14}}, \bibinfo{pages}{3348--3361}
+  (\bibinfo{year}{2021}).
+
+\bibitem{elghareeb2020neutro}
+\bibinfo{author}{El-Ghareeb, H.~A.}
+\newblock \bibinfo{title}{Neutrosophic-based domain-specific languages and
+  rules engine to ensure data sovereignty and consensus achievement in
+  microservices architecture}.
+\newblock In \emph{\bibinfo{booktitle}{Optimization Theory Based on
+  Neutrosophic and Plithogenic Sets}}, \bibinfo{pages}{21--43}
+  (\bibinfo{publisher}{Elsevier}, \bibinfo{year}{2020}).
+
+\bibitem{chang2025sagallm}
+\bibinfo{author}{Chang, E.~Y.} \emph{et~al.}
+\newblock \bibinfo{title}{{SagaLLM}: Context management, validation, and
+  transaction guarantees for multi-agent {LLM} planning}.
+\newblock \emph{\bibinfo{journal}{Proceedings of the VLDB Endowment}}
+  \textbf{\bibinfo{volume}{18}} (\bibinfo{year}{2025}).
+
+\bibitem{marcelino2024goldfish}
+\bibinfo{author}{Marcelino, C.}, \bibinfo{author}{Shahhoud, S.} \&
+  \bibinfo{author}{Nasti{\'c}, S.}
+\newblock \bibinfo{title}{{GoldFish}: Serverless actors with short-term memory
+  state for the edge-cloud continuum}.
+\newblock In \emph{\bibinfo{booktitle}{Proceedings of the 14th International
+  Conference on the Internet of Things (IoT)}} (\bibinfo{year}{2024}).
+
+\bibitem{delarua2024hopsworks}
+\bibinfo{author}{de~la R{\'u}a~Mart{\'i}nez, J.} \emph{et~al.}
+\newblock \bibinfo{title}{The {Hopsworks} feature store for machine learning}.
+\newblock In \emph{\bibinfo{booktitle}{Companion of the 2024 International
+  Conference on Management of Data (SIGMOD)}}, \bibinfo{pages}{135--147}
+  (\bibinfo{year}{2024}).
+
+\bibitem{wooders2024ralf}
+\bibinfo{author}{Wooders, S.}, \bibinfo{author}{Audibert, P.},
+  \bibinfo{author}{Sreenivasan, R.} \emph{et~al.}
+\newblock \bibinfo{title}{{RALF}: Accuracy-aware scheduling for feature store
+  maintenance}.
+\newblock \emph{\bibinfo{journal}{Proceedings of the VLDB Endowment}}
+  \textbf{\bibinfo{volume}{17}}, \bibinfo{pages}{563--576}
+  (\bibinfo{year}{2024}).
+
+\bibitem{laigner2025marketplace}
+\bibinfo{author}{Laigner, R.}, \bibinfo{author}{Zhang, Z.},
+  \bibinfo{author}{Liu, Y.}, \bibinfo{author}{Gomes, L.~F.} \&
+  \bibinfo{author}{Zhou, Y.}
+\newblock \bibinfo{title}{Online marketplace: A benchmark for data management
+  in microservices}.
+\newblock \emph{\bibinfo{journal}{Proceedings of the ACM on Management of Data
+  (SIGMOD)}}  (\bibinfo{year}{2025}).
+
+\bibitem{rodrigues2025slr}
+\bibinfo{author}{Rodrigues}, \bibinfo{author}{Rito~Silva, A.} \&
+  \bibinfo{author}{Avritzer, A.}
+\newblock \bibinfo{title}{Assessment of performance and its scalability in
+  microservice architectures: A systematic literature review}.
+\newblock \emph{\bibinfo{journal}{Journal of Systems and Software}}
+  \textbf{\bibinfo{volume}{230}}, \bibinfo{pages}{112500}
+  (\bibinfo{year}{2025}).
+
+\bibitem{lloyd2011cops}
+\bibinfo{author}{Lloyd, W.}, \bibinfo{author}{Freedman, M.~J.},
+  \bibinfo{author}{Kaminsky, M.} \& \bibinfo{author}{Andersen, D.~G.}
+\newblock \bibinfo{title}{Don't settle for eventual: Scalable causal
+  consistency for wide-area storage with {COPS}}.
+\newblock In \emph{\bibinfo{booktitle}{ACM Symposium on Operating Systems
+  Principles (SOSP)}}, \bibinfo{pages}{401--416} (\bibinfo{year}{2011}).
+
+\bibitem{bailis2012pbs}
+\bibinfo{author}{Bailis, P.}, \bibinfo{author}{Venkataraman, S.},
+  \bibinfo{author}{Franklin, M.~J.}, \bibinfo{author}{Hellerstein, J.~M.} \&
+  \bibinfo{author}{Stoica, I.}
+\newblock \bibinfo{title}{Probabilistically bounded staleness for practical
+  partial quorums}.
+\newblock \emph{\bibinfo{journal}{Proceedings of the VLDB Endowment}}
+  \textbf{\bibinfo{volume}{5}}, \bibinfo{pages}{776--787}
+  (\bibinfo{year}{2012}).
+
+\bibitem{shapiro2011crdt}
+\bibinfo{author}{Shapiro, M.}, \bibinfo{author}{Pregui{\c{c}}a, N.},
+  \bibinfo{author}{Baquero, C.} \& \bibinfo{author}{Zawirski, M.}
+\newblock \bibinfo{title}{Conflict-free replicated data types}.
+\newblock In \emph{\bibinfo{booktitle}{Stabilization, Safety, and Security of
+  Distributed Systems (SSS)}}, \bibinfo{pages}{386--400}
+  (\bibinfo{year}{2011}).
+
+\bibitem{preguica2018crdt}
+\bibinfo{author}{Pregui{\c{c}}a, N.}
+\newblock \bibinfo{title}{Conflict-free replicated data types: An overview}.
+\newblock \emph{\bibinfo{journal}{arXiv preprint arXiv:1806.10254}}
+  (\bibinfo{year}{2018}).
+
+\bibitem{viotti2016consistency}
+\bibinfo{author}{Viotti, P.} \& \bibinfo{author}{Vukoli{\'c}, M.}
+\newblock \bibinfo{title}{Consistency in non-transactional distributed storage
+  systems}.
+\newblock \emph{\bibinfo{journal}{ACM Computing Surveys}}
+  \textbf{\bibinfo{volume}{49}}, \bibinfo{pages}{19:1--19:34}
+  (\bibinfo{year}{2016}).
+
+\bibitem{ongaro2014raft}
+\bibinfo{author}{Ongaro, D.} \& \bibinfo{author}{Ousterhout, J.}
+\newblock \bibinfo{title}{In search of an understandable consensus algorithm}.
+\newblock In \emph{\bibinfo{booktitle}{USENIX Annual Technical Conference
+  (USENIX ATC)}}, \bibinfo{pages}{305--319} (\bibinfo{year}{2014}).
+
+\bibitem{lamport1998paxos}
+\bibinfo{author}{Lamport, L.}
+\newblock \bibinfo{title}{The part-time parliament}.
+\newblock \emph{\bibinfo{journal}{ACM Transactions on Computer Systems}}
+  \textbf{\bibinfo{volume}{16}}, \bibinfo{pages}{133--169}
+  (\bibinfo{year}{1998}).
+
+\bibitem{castro2002pbft}
+\bibinfo{author}{Castro, M.} \& \bibinfo{author}{Liskov, B.}
+\newblock \bibinfo{title}{Practical byzantine fault tolerance and proactive
+  recovery}.
+\newblock \emph{\bibinfo{journal}{ACM Transactions on Computer Systems}}
+  \textbf{\bibinfo{volume}{20}}, \bibinfo{pages}{398--461}
+  (\bibinfo{year}{2002}).
+
+\bibitem{forgy1982rete}
+\bibinfo{author}{Forgy, C.~L.}
+\newblock \bibinfo{title}{Rete: A fast algorithm for the many pattern/many
+  object pattern match problem}.
+\newblock \emph{\bibinfo{journal}{Artificial Intelligence}}
+  \textbf{\bibinfo{volume}{19}}, \bibinfo{pages}{17--37}
+  (\bibinfo{year}{1982}).
+
+\bibitem{proctor2012drools}
+\bibinfo{author}{Proctor, M.}
+\newblock \bibinfo{title}{Drools: A rule engine for complex event processing}.
+\newblock In \emph{\bibinfo{booktitle}{Applications of Graph Transformations
+  with Industrial Relevance (AGTIVE)}} (\bibinfo{year}{2012}).
+
+\bibitem{mernik2005dsl}
+\bibinfo{author}{Mernik, M.}, \bibinfo{author}{Heering, J.} \&
+  \bibinfo{author}{Sloane, A.~M.}
+\newblock \bibinfo{title}{When and how to develop domain-specific languages}.
+\newblock \emph{\bibinfo{journal}{ACM Computing Surveys}}
+  \textbf{\bibinfo{volume}{37}}, \bibinfo{pages}{316--344}
+  (\bibinfo{year}{2005}).
+
+\bibitem{parr2013antlr}
+\bibinfo{author}{Parr, T.}
+\newblock \emph{\bibinfo{title}{The Definitive {ANTLR} 4 Reference}}
+  (\bibinfo{publisher}{Pragmatic Bookshelf}, \bibinfo{year}{2013}).
+
+\bibitem{wang2010svns}
+\bibinfo{author}{Wang, H.}, \bibinfo{author}{Smarandache, F.},
+  \bibinfo{author}{Zhang, Y.} \& \bibinfo{author}{Sunderraman, R.}
+\newblock \bibinfo{title}{Single valued neutrosophic sets}.
+\newblock \emph{\bibinfo{journal}{Multispace and Multistructure}}
+  \textbf{\bibinfo{volume}{4}}, \bibinfo{pages}{410--413}
+  (\bibinfo{year}{2010}).
+
+\bibitem{smarandache1999unifying}
+\bibinfo{author}{Smarandache, F.}
+\newblock \emph{\bibinfo{title}{A Unifying Field in Logics: Neutrosophic Logic.
+  Neutrosophy, Neutrosophic Set, Neutrosophic Probability}}
+  (\bibinfo{publisher}{American Research Press}, \bibinfo{year}{1999}).
+
+\bibitem{ye2014score}
+\bibinfo{author}{Ye, J.}
+\newblock \bibinfo{title}{A multicriteria decision-making method using
+  aggregation operators for simplified neutrosophic sets}.
+\newblock \emph{\bibinfo{journal}{Journal of Intelligent \& Fuzzy Systems}}
+  \textbf{\bibinfo{volume}{26}}, \bibinfo{pages}{2459--2466}
+  (\bibinfo{year}{2014}).
+
+\bibitem{jana2019robust}
+\bibinfo{author}{Jana, C.} \& \bibinfo{author}{Pal, M.}
+\newblock \bibinfo{title}{A robust single-valued neutrosophic soft aggregation
+  operators in multi-criteria decision making}.
+\newblock \emph{\bibinfo{journal}{Symmetry}} \textbf{\bibinfo{volume}{11}},
+  \bibinfo{pages}{110} (\bibinfo{year}{2019}).
+
+\bibitem{elghareeb2019package}
+\bibinfo{author}{El-Ghareeb, H.~A.}
+\newblock \bibinfo{title}{Novel open source python neutrosophic package}.
+\newblock \emph{\bibinfo{journal}{Neutrosophic Sets and Systems}}
+  \textbf{\bibinfo{volume}{25}}, \bibinfo{pages}{136--160}
+  (\bibinfo{year}{2019}).
+
+\bibitem{nabeeh2019topsis}
+\bibinfo{author}{Nabeeh, N.~A.}, \bibinfo{author}{Smarandache, F.},
+  \bibinfo{author}{Abdel-Basset, M.}, \bibinfo{author}{El-Ghareeb, H.~A.} \&
+  \bibinfo{author}{Aboelfetouh, A.}
+\newblock \bibinfo{title}{An integrated neutrosophic-{TOPSIS} approach and its
+  application to personnel selection: A new trend in brain processing and
+  analysis}.
+\newblock \emph{\bibinfo{journal}{IEEE Access}} \textbf{\bibinfo{volume}{7}},
+  \bibinfo{pages}{29734--29744} (\bibinfo{year}{2019}).
+
+\bibitem{gan2019deathstarbench}
+\bibinfo{author}{Gan, Y.} \emph{et~al.}
+\newblock \bibinfo{title}{An open-source benchmark suite for microservices and
+  their hardware-software implications for cloud \& edge systems}.
+\newblock In \emph{\bibinfo{booktitle}{ASPLOS}}, \bibinfo{pages}{3--18}
+  (\bibinfo{year}{2019}).
+
+\bibitem{zhou2021trainticket}
+\bibinfo{author}{Zhou, X.} \emph{et~al.}
+\newblock \bibinfo{title}{Fault analysis and debugging of microservice systems:
+  Industrial survey, benchmark system, and empirical study}.
+\newblock \emph{\bibinfo{journal}{IEEE Transactions on Software Engineering}}
+  \textbf{\bibinfo{volume}{47}}, \bibinfo{pages}{243--260}
+  (\bibinfo{year}{2021}).
+
+\bibitem{georges2007rigorous}
+\bibinfo{author}{Georges, A.}, \bibinfo{author}{Buytaert, D.} \&
+  \bibinfo{author}{Eeckhout, L.}
+\newblock \bibinfo{title}{Statistically rigorous java performance evaluation}.
+\newblock \emph{\bibinfo{journal}{ACM SIGPLAN Notices}}
+  \textbf{\bibinfo{volume}{42}}, \bibinfo{pages}{57--76}
+  (\bibinfo{year}{2007}).
+
+\bibitem{papadopoulos2021reproducible}
+\bibinfo{author}{Papadopoulos, A.~V.}, \bibinfo{author}{Versluis, L.},
+  \bibinfo{author}{Bauer, A.} \emph{et~al.}
+\newblock \bibinfo{title}{Methodological principles for reproducible
+  performance evaluation in cloud computing}.
+\newblock \emph{\bibinfo{journal}{IEEE Transactions on Software Engineering}}
+  \textbf{\bibinfo{volume}{47}}, \bibinfo{pages}{1528--1543}
+  (\bibinfo{year}{2021}).
+
+\bibitem{terry2013pileus}
+\bibinfo{author}{Terry, D.~B.} \emph{et~al.}
+\newblock \bibinfo{title}{Consistency-based service level agreements for cloud
+  storage}.
+\newblock In \emph{\bibinfo{booktitle}{ACM Symposium on Operating Systems
+  Principles (SOSP)}} (\bibinfo{year}{2013}).
+
+\bibitem{wolpert1997nfl}
+\bibinfo{author}{Wolpert, D.~H.} \& \bibinfo{author}{Macready, W.~G.}
+\newblock \bibinfo{title}{No free lunch theorems for optimization}.
+\newblock \emph{\bibinfo{journal}{IEEE Transactions on Evolutionary
+  Computation}} \textbf{\bibinfo{volume}{1}}, \bibinfo{pages}{67--82}
+  (\bibinfo{year}{1997}).
+
+\bibitem{dombi1982}
+\bibinfo{author}{Dombi, J.}
+\newblock \bibinfo{title}{A general class of fuzzy operators, the {De Morgan}
+  class of fuzzy operators and fuzziness measures induced by fuzzy operators}.
+\newblock \emph{\bibinfo{journal}{Fuzzy Sets and Systems}}
+  \textbf{\bibinfo{volume}{8}}, \bibinfo{pages}{149--163}
+  (\bibinfo{year}{1982}).
+
+\bibitem{aczel1982}
+\bibinfo{author}{Acz{\'e}l, J.} \& \bibinfo{author}{Alsina, C.}
+\newblock \bibinfo{title}{Characterizations of some classes of quasilinear
+  functions with applications to triangular norms and to synthesizing
+  judgements}.
+\newblock \emph{\bibinfo{journal}{Aequationes Mathematicae}}
+  \textbf{\bibinfo{volume}{25}}, \bibinfo{pages}{313--315}
+  (\bibinfo{year}{1982}).
+
+\bibitem{storn1997de}
+\bibinfo{author}{Storn, R.} \& \bibinfo{author}{Price, K.}
+\newblock \bibinfo{title}{Differential evolution -- a simple and efficient
+  heuristic for global optimization over continuous spaces}.
+\newblock \emph{\bibinfo{journal}{Journal of Global Optimization}}
+  \textbf{\bibinfo{volume}{11}}, \bibinfo{pages}{341--359}
+  (\bibinfo{year}{1997}).
+
+\bibitem{hansen2001cmaes}
+\bibinfo{author}{Hansen, N.} \& \bibinfo{author}{Ostermeier, A.}
+\newblock \bibinfo{title}{Completely derandomized self-adaptation in evolution
+  strategies}.
+\newblock \emph{\bibinfo{journal}{Evolutionary Computation}}
+  \textbf{\bibinfo{volume}{9}}, \bibinfo{pages}{159--195}
+  (\bibinfo{year}{2001}).
+
+\bibitem{kennedy1995pso}
+\bibinfo{author}{Kennedy, J.} \& \bibinfo{author}{Eberhart, R.}
+\newblock \bibinfo{title}{Particle swarm optimization}.
+\newblock In \emph{\bibinfo{booktitle}{Proceedings of the International
+  Conference on Neural Networks (ICNN)}} (\bibinfo{year}{1995}).
+
+\bibitem{su2023rime}
+\bibinfo{author}{Su, H.} \emph{et~al.}
+\newblock \bibinfo{title}{{RIME}: A physics-based optimization}.
+\newblock \emph{\bibinfo{journal}{Neurocomputing}}
+  \textbf{\bibinfo{volume}{532}}, \bibinfo{pages}{183--214}
+  (\bibinfo{year}{2023}).
+
+\bibitem{elkenawy2024nioa}
+\bibinfo{author}{El-Kenawy, E.-S.~M.} \emph{et~al.}
+\newblock \bibinfo{title}{{NiOA}: A novel metaheuristic algorithm modeled on
+  the stealth and precision of {Japanese} ninjas}.
+\newblock \emph{\bibinfo{journal}{Journal of Artificial Intelligence in
+  Engineering Practice}} \textbf{\bibinfo{volume}{1}}, \bibinfo{pages}{17--35}
+  (\bibinfo{year}{2024}).
+
+\bibitem{yin2018byzantine}
+\bibinfo{author}{Yin, D.}, \bibinfo{author}{Chen, Y.}, \bibinfo{author}{Kannan,
+  R.} \& \bibinfo{author}{Bartlett, P.}
+\newblock \bibinfo{title}{{Byzantine-Robust} distributed learning: Towards
+  optimal statistical rates}.
+\newblock In \emph{\bibinfo{booktitle}{International Conference on Machine
+  Learning (ICML)}} (\bibinfo{year}{2018}).
+
+\bibitem{blanchard2017krum}
+\bibinfo{author}{Blanchard, P.}, \bibinfo{author}{El~Mhamdi, E.~M.},
+  \bibinfo{author}{Guerraoui, R.} \& \bibinfo{author}{Stainer, J.}
+\newblock \bibinfo{title}{Machine learning with adversaries: {Byzantine}
+  tolerant gradient descent}.
+\newblock In \emph{\bibinfo{booktitle}{Advances in Neural Information
+  Processing Systems (NeurIPS)}} (\bibinfo{year}{2017}).
+
+\end{thebibliography}
