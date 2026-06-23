@@ -29,22 +29,20 @@
 Mansoura University, Mansoura, Egypt}
 
 \begin{abstract}
-Microservices must often decide over \emph{global} state---a personalized price, a fraud flag, a
-clone-readiness check---while each service owns its data and the only cross-service signal is a cache
-that may hold values that were never committed. A boolean fresh/stale flag collapses a decisive case: a
-value held \emph{only in cache} is neither committed nor absent. We develop a decentralized decision
-layer in which every item carries a single-valued neutrosophic triple $(T,I,F)$ for its persistence
-status; peer services fuse their views with weighted neutrosophic operators and a deneutrosophy score,
-then act or abstain with no central authority. The layer sits \emph{above} the consistency substrate and
-is not a consensus protocol. We prove one-round termination and safety/liveness bounds (generalized to a
-graded encoding) and give an honest Byzantine analysis separating gate robustness from value selection;
-audits over operators, scores, and tuned weights confirm the result is not a design artefact. In a
-reproducible evaluation against strong, eventual, and quorum consistency baselines the layer occupies a
-Pareto interior: at a $10\%$ failure rate it cuts the stale-decision rate by $16.7$ percentage points
-versus last-writer-wins and stays $88\%$ available under partition where a strongly-consistent primary
-drops to $45\%$, matching a boolean quorum's correctness at about twice its availability. We make no
-superiority claim over consensus protocols and characterize an honest, reproducible trade-off; every
-number regenerates from committed code, a content-hashed calibration, and recorded seeds.
+Microservices often decide over \emph{global} state, yet each owns its data and the only cross-service
+signal is a cache that may hold values never committed. A boolean fresh/stale flag collapses
+a decisive case: a value held \emph{only in cache} is neither committed nor absent. We develop a
+decentralized decision layer in which every item carries a single-valued neutrosophic triple $(T,I,F)$ for
+its persistence status; peers fuse their views with weighted operators and a deneutrosophy score, then act
+or abstain with no central authority. The layer sits \emph{above} the consistency substrate and is not a
+consensus protocol. We prove one-round termination and safety/liveness bounds (generalized to a graded
+encoding) and an honest Byzantine analysis separating gate from value robustness; operator, score, and
+weight audits confirm it is not an artefact. Against consistency baselines the layer
+occupies a Pareto interior: at a $10\%$ failure rate it cuts the stale-decision rate by $16.7$ points
+versus last-writer-wins, stays $88\%$ available under partition where a primary drops to $45\%$, and
+matches a boolean quorum's correctness at twice its availability, and generalizes to a distinct
+feature-store domain. We claim no superiority over consensus; the contribution is an honest, reproducible
+trade-off, every number regenerating from committed code, a content-hashed calibration, and seeds.
 \end{abstract}
 
 \begin{keyword}
