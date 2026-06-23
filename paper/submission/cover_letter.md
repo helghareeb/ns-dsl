@@ -20,7 +20,7 @@ single-valued neutrosophic triple $(T,I,F)$ for its persistence status; peers fu
 weighted operators and a deneutrosophy score and then *act or abstain* with no central authority. The
 work is, to our knowledge, the first to turn this representation into a concrete, formally analysed, and
 reproducibly evaluated mechanism. We provide one-round termination and safety/liveness guarantees
-generalized to a graded encoding, an *honest* Byzantine analysis that separates gate robustness from
+generalized to a graded encoding, a Byzantine analysis that separates gate robustness from
 value selection (including a proven limitation and the precise fix it motivates), and a controlled
 evaluation against strong, eventual, quorum, and single-probability baselines across four scenarios —
 including a distinct ML feature-store domain — on a reproducible simulator plus a real, emulated-WAN
@@ -28,10 +28,10 @@ container testbed.
 
 **Why *Scientific Reports*.** The work is a cross-disciplinary systems contribution: it bridges
 neutrosophic decision theory, distributed-systems consistency, and reproducible empirical methodology,
-and it is written to be accessible to a broad readership. We emphasise honest, calibrated reporting —
+and it is written to be accessible to a broad readership. We emphasise transparent, calibrated reporting —
 every reported number regenerates end-to-end from committed code, a content-hashed calibration, and
 recorded seeds — which we believe fits the journal's standards for rigour and openness. We make no
-superiority claim over consensus protocols; we characterise an honest trade-off and report nulls
+superiority claim over consensus protocols; we characterise a calibrated trade-off and report nulls
 (e.g. that a calibrated single-probability gate is competitive) plainly.
 
 **Statements.** This manuscript is original, is not under consideration elsewhere, and has not been
