@@ -1,5 +1,7 @@
-\documentclass[preprint,11pt]{elsarticle}
+\documentclass[11pt]{article}
 
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
 \usepackage{amsmath,amssymb}
 \usepackage{amsthm}
 \newtheorem{proposition}{Proposition}
@@ -15,21 +17,18 @@
 \usepackage{algpseudocode}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
+\usepackage{lineno}
 \graphicspath{{../results/figures/}}
 
-\journal{Information Sciences}
+\title{A decentralized neutrosophic decision layer for global-state freshness in microservices architectures}
+\author{Haitham A. El-Ghareeb\thanks{Corresponding author: \texttt{helghareeb@mans.edu.eg}}\\[2pt]
+Information Systems Department, Faculty of Computers and Information Sciences,\\
+Mansoura University, Mansoura, Egypt}
+\date{}
 
 \begin{document}
-
-\begin{frontmatter}
-
-\title{A decentralized neutrosophic decision layer for global-state freshness in microservices architectures}
-
-\author{Haitham A. El-Ghareeb\corref{cor1}}
-\ead{helghareeb@mans.edu.eg}
-\address{Information Systems Department, Faculty of Computers and Information Sciences,
-Mansoura University, Mansoura, Egypt}
-\cortext[cor1]{Corresponding author}
+\maketitle
+\linenumbers
 
 \begin{abstract}
 Microservices decide over global state, yet each owns its data and the only cross-service
@@ -49,12 +48,9 @@ whose every reported number regenerates from committed code, a content-hashed ca
 seeds.
 \end{abstract}
 
-\begin{keyword}
-microservices \sep neutrosophic sets \sep data freshness \sep eventual consistency
-\sep Byzantine fault tolerance \sep decentralized decision-making
-\end{keyword}
-
-\end{frontmatter}
+\noindent\textbf{Keywords:} microservices; neutrosophic sets; data freshness; eventual consistency;
+Byzantine fault tolerance; decentralized decision-making.
+\bigskip
 
 %====================================================================
 \section{Introduction}
@@ -874,7 +870,7 @@ The author received no specific funding for this work.
 A large language model (Claude, Anthropic) assisted with code scaffolding and manuscript drafting under
 the author's direction; the author reviewed and verified all content and is solely responsible for it.
 
-\bibliographystyle{elsarticle-num}
+\bibliographystyle{naturemag}
 \bibliography{refs}
 
 \end{document}
