@@ -1,0 +1,4 @@
+scenario,uniform_utility,tuned_utility_best,tuned_best_optimizer,delta,delta_pct
+S1,0.6672,0.6672,random,0.0000,0.0
+S2,-0.0793,-0.0713,tpe,0.0080,10.1
+S3,0.2921,0.2921,random,0.0000,0.0
