@@ -9,7 +9,8 @@
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{url}
-\usepackage[strings]{underscore} % let underscores in DOIs render in the bibliography
+% underscore package removed: with [strings] it broke \ref/\cite inside figure/table captions
+% (moving args). The only underscores needing it were two bibliography DOIs, now \_-escaped in refs.bib.
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{tikz}
@@ -24,9 +25,11 @@
 
 \title{A decentralized neutrosophic decision layer for global-state freshness in microservices architectures}
 
-\author{Haitham A. El-Ghareeb}
+\author{Haitham A. El-Ghareeb\corref{cor1}}
+\ead{helghareeb@mans.edu.eg}
 \address{Information Systems Department, Faculty of Computers and Information Sciences,
 Mansoura University, Mansoura, Egypt}
+\cortext[cor1]{Corresponding author}
 
 \begin{abstract}
 Microservices often decide over global state, yet each owns its data and the only cross-service
@@ -212,7 +215,7 @@ of decisions---decisions the boolean flag cannot make without abstaining (Figure
 
 \paragraph{RQ2: correctness vs.\ eventual consistency.} At $\varphi=0.1$ (S2, no partition),
 neutro-waa (the optimistic weighted-arithmetic configuration of the layer; Section~\ref{sec:methods})
-attains a stale-rate of $0.248$ $[0.242,0.254]$ versus $0.415$ for lww-crdt, $0.506$ for
+attains a stale-rate of $0.248$ $[0.244,0.251]$ versus $0.415$ for lww-crdt, $0.506$ for
 naive-cache, and $0.349$ for the PBS partial-quorum reader (the nearest prior art)---absolute reductions of
 $16.7$, $25.8$, and $10.1$ percentage points ($40\%$, $51\%$, and $29\%$ relative), respectively
 (two-sided paired Wilcoxon signed-rank over $n=250$ paired repetitions, $\alpha=0.05$, Holm-corrected
@@ -249,8 +252,8 @@ representational---frontier control and an interpretable separation of indetermi
 uniform accuracy win over a strong scalar.
 
 \paragraph{RQ5: operator ablation.} SVNNWGA (the single-valued neutrosophic weighted geometric averaging
-operator) is the conservative operator: lower stale-rate (e.g.\ S3 transient: $0.226$ vs.\ $0.288$) at
-much lower availability ($0.276$ vs.\ $0.993$). The arithmetic (SVNNWAA) and geometric (SVNNWGA) operators
+operator) is the conservative operator: lower stale-rate (e.g.\ S3 transient at $\varphi=0.1$: $0.218$
+vs.\ $0.288$) at much lower availability ($0.279$ vs.\ $0.993$). The arithmetic (SVNNWAA) and geometric (SVNNWGA) operators
 thus span an optimistic--conservative frontier, selectable per scenario via $\tau$.
 
 \paragraph{Operator panel (Axis A).} Beyond the crisp WAA/WGA pair, a panel of parametric
@@ -420,9 +423,10 @@ the consistency baselines. On crisp inputs every operator collapses to WAA.}\lab
 
 \begin{figure}[t]\centering
 \includegraphics[width=0.7\linewidth]{f12_byzantine.pdf}
-\caption{Byzantine value-fabrication (S2, $\varphi=0.1$, $R=5$): the robust aggregators (median, Krum,
-trimmed mean) degrade together with the averaging operators as the adversary fraction grows---robust
-aggregation defends the gate (Lemma~\ref{lem:byz}), not value selection.}\label{fig:byzantine}\end{figure}
+\caption[Byzantine value-fabrication robustness (S2)]{Byzantine value-fabrication (S2, $\varphi=0.1$,
+$R=5$): the robust aggregators (median, Krum, trimmed mean) degrade together with the averaging operators
+as the adversary fraction grows---robust aggregation defends the gate (Lemma~\ref{lem:byz}), not value
+selection.}\label{fig:byzantine}\end{figure}
 
 \begin{figure}[t]\centering
 \includegraphics[width=0.95\linewidth]{f13_scalability.pdf}
@@ -498,7 +502,7 @@ study and the robust value-quorum that Proposition~\ref{prop:valbyz} calls for r
 
 \paragraph{Conclusion.} Latency-like quantities are heavy-tailed, so we use nonparametric paired tests
 and report effect sizes with bootstrap CIs; multiple comparisons are Holm-corrected within a-priori
-families; cross-seed non-replication ($3\%$ of cells) is flagged and excluded from headline claims.
+families; cross-seed non-replication ($2\%$ of cells) is flagged and excluded from headline claims.
 
 %====================================================================
 \subsection{Conclusion}
@@ -529,7 +533,7 @@ learned, reputation-weighted peer weights; and dynamic membership and service ch
 \begin{tikzpicture}[>={Stealth[length=2.2mm]}, font=\footnotesize,
   svc/.style={draw,rounded corners,fill=blue!6,minimum width=22mm,minimum height=11mm,align=center},
   op/.style={draw,rounded corners,fill=gray!12,minimum width=20mm,minimum height=9mm,align=center},
-  out/.style={draw,rounded corners,fill=green!14,minimum width=30mm,minimum height=9mm,align=center}]
+  gatebox/.style={draw,rounded corners,fill=green!14,minimum width=30mm,minimum height=9mm,align=center}]
   \node[draw,fill=orange!14,minimum width=84mm,minimum height=6mm] (bus)
        {event bus: JSON \emph{state}/\emph{rule} messages (DSL, ANTLR-parsed)};
   \node[svc,below=10mm of bus] (p2) {Peer $p_2$\\cache\,/\,DB $\to(T,I,F)$};
@@ -538,7 +542,7 @@ learned, reputation-weighted peer weights; and dynamic membership and service ch
   \foreach \p in {p1,p2,pn} \draw[<->] (\p.north) -- (\p.north|-bus.south);
   \node[op,below=12mm of p2] (agg) {Aggregate $\oplus$};
   \node[op,right=8mm of agg] (sc) {Score $s$};
-  \node[out,right=8mm of sc] (gate) {Act\,/\,Abstain ($s\!\ge\!\tau$)};
+  \node[gatebox,right=8mm of sc] (gate) {Act\,/\,Abstain ($s\!\ge\!\tau$)};
   \foreach \p in {p1,p2,pn} \draw[->] (\p) -- (agg);
   \draw[->] (agg) -- (sc); \draw[->] (sc) -- (gate);
   \node[font=\scriptsize,left=1mm of agg.north west,anchor=south east] {$(T,I,F)$ views};
@@ -625,12 +629,12 @@ shows the audit pipeline.
   st/.style={draw,rounded corners,fill=blue!6,align=center,minimum height=10mm,minimum width=16mm},
   ax/.style={draw,rounded corners,fill=gray!12,align=center,minimum height=13mm,minimum width=25mm},
   tn/.style={draw,rounded corners,fill=orange!14,align=center,minimum height=11mm,minimum width=52mm},
-  out/.style={draw,rounded corners,fill=green!14,align=center,minimum height=10mm,minimum width=17mm}]
+  gatebox/.style={draw,rounded corners,fill=green!14,align=center,minimum height=10mm,minimum width=17mm}]
   \node[st] (views) {peer\\$(T,I,F)$};
   \node[ax,right=6mm of views] (enc) {encoding\\\textbf{crisp}\,/\,graded};
   \node[ax,right=6mm of enc] (opA) {\textbf{Axis A}: operator\\WAA, WGA, Einstein,\\Dombi, \dots, median, Krum};
   \node[ax,right=6mm of opA] (scA) {\textbf{Axis A$'$}: score\\std, accuracy,\\cosine, \dots};
-  \node[out,right=6mm of scA] (gate) {gate $s\!\ge\!\tau$\\Act\,/\,Abstain};
+  \node[gatebox,right=6mm of scA] (gate) {gate $s\!\ge\!\tau$\\Act\,/\,Abstain};
   \draw[->] (views)--(enc); \draw[->] (enc)--(opA); \draw[->] (opA)--(scA); \draw[->] (scA)--(gate);
   \node[tn,below=11mm of opA] (mh) {\textbf{Axis B}: equal-budget metaheuristic tuner\\GA, DE, CMA-ES, PSO, TPE, RIME, Ninja $\to(\tau,w)$};
   \draw[->] (mh.north) -- (opA.south);
