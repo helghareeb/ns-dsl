@@ -204,14 +204,14 @@ Boolean quorum (control) & 1 bit (fresh/stale) & yes & no & yes \\
 
 Across the validated grid ($288$ cells over five master seeds), $98\%$ of headline cells replicate
 in sign across all seeds.
-Figure~\ref{fig:stale} shows stale-decision rate versus failure-injection rate; Figure~\ref{fig:pareto}
+Supplementary Fig.~S1 shows stale-decision rate versus failure-injection rate; Figure~\ref{fig:pareto}
 the correctness/availability trade-off; Figure~\ref{fig:partition} availability under partition.
-Table~\ref{tab:headline-s2} reports S2 in full; Table~\ref{tab:headline-s1} reports S1.
+Supplementary Table~S2 reports S2 in full; Supplementary Table~S3 reports S1.
 
 \subsection{Signal richness}
 The indeterminacy axis is heavily populated (mean cache occupancy
 $\approx 0.4$), and the neutrosophic decision differs from a boolean quorum on a substantial fraction
-of decisions---decisions the boolean flag cannot make without abstaining (Figure~\ref{fig:signal}).
+of decisions---decisions the boolean flag cannot make without abstaining (Supplementary Fig.~S2).
 
 \subsection{Correctness and availability under failure}
 At $\varphi=0.1$ (S2, no partition),
@@ -278,7 +278,7 @@ property of the $(T,I,F)$ representation and its gate, not of any single score.
 
 \paragraph{Weight and threshold tuning (Axis B).} Replacing the hand-fit $\tau$ and uniform weights with
 an equal-budget metaheuristic search over $[\tau, w_1,\dots,w_R]$---seven optimizers (random, DE, CMA-ES,
-TPE, PSO, RIME, NiOA) at $120$ evaluations each (Figure~\ref{fig:tuning})---gives a two-part
+TPE, PSO, RIME, NiOA) at $120$ evaluations each (Supplementary Fig.~S8)---gives a two-part
 result. First, tuning helps only where the cost is asymmetric: on the symmetric scenarios S1 and
 S3 every optimizer recovers \emph{exactly} the uniform-weights utility ($0.667$ and $0.292$---the hand-fit
 calibration is already optimal), whereas on the asymmetric-cost S2 the best search improves utility by
@@ -308,13 +308,13 @@ leave to future work.
 \subsection{Latency and throughput}
 On a real localhost HTTP testbed (Section~\ref{sec:methods}), the
 strategies separate into three latency tiers that confirm the communication-cost model
-(Figure~\ref{fig:latency}): a local read (naive-cache, $\approx 0$\,ms), a single round-trip
+(Supplementary Fig.~S3): a local read (naive-cache, $\approx 0$\,ms), a single round-trip
 (centralized, raft-lww, single-peer), a partial quorum (pbs-quorum), and a full $R$-peer fan-out
 (neutro-waa/wga, quorum-bool, lww-crdt). At a $5$\,ms per-hop RTT the neutrosophic layer's median
 decision latency is in the fan-out tier alongside quorum and CRDT---the measured price of decentralized
 decision-making, compared to a single hop for the centralized authority. (Absolute values include loopback
 runtime overhead; the operative cost axis is messages per decision, reported exactly in
-Tables~\ref{tab:headline-s2}--\ref{tab:headline-s1}.) Figure~\ref{fig:throughput} reports measured
+Supplementary Tables~S2 and~S3.) Supplementary Fig.~S4 reports measured
 throughput under concurrent load: the local and single-hop strategies sustain the highest
 decisions/sec, and the fan-out strategies (including ours) the lowest, consistent with their message
 cost. The same tiers hold on a containerized deployment (five peer containers plus a Redis bus and
@@ -323,7 +323,7 @@ fan-out $\approx 26.4$\,ms median, confirming the result is not an artefact of t
 
 \paragraph{Decision latency under emulated WAN.} We harden the latency claim on the same containerized
 deployment with a Toxiproxy proxy injecting per-link latency, jitter, and loss
-(Figure~\ref{fig:wan}; single-host \emph{emulation}---real HTTP over real proxied sockets, not a
+(Supplementary Fig.~S7; single-host \emph{emulation}---real HTTP over real proxied sockets, not a
 geo-distributed cluster). The three communication patterns separate cleanly and the gap \emph{grows}
 with link latency: at a $1$\,ms LAN profile the median single-hop, majority-wait, and $R$-peer fan-out
 decisions are $3.1$, $8.3$, and $13.1$\,ms; at an $80\pm20$\,ms WAN profile they are $83$, $251$, and
@@ -336,7 +336,7 @@ abstracts, now quantified on real network paths. Absolute values remain host-bou
 geo-distributed multi-datacenter study is future work (Section~\ref{sec:threats}).
 
 \paragraph{Sensitivity.} The advantage is stable across replica counts $R\in\{3,5,7\}$ and grows with
-the cache ratio $\rho$ (Figure~\ref{fig:sensitivity}): as more reads are unconfirmed, the gap between
+the cache ratio $\rho$ (Supplementary Fig.~S6): as more reads are unconfirmed, the gap between
 the neutrosophic layer and the eventual-consistency baselines widens, because that is exactly the
 regime in which the indeterminacy axis carries information.
 
@@ -363,7 +363,7 @@ harder overall---every reader is staler than on the e-commerce scenarios---and t
 advantage of retaining the $(T,I,F)$ signal carries to a second, structurally different domain.
 
 \paragraph{S3: clone catch-up.} A freshly cloned replica boots with every key absent and replays
-the logs-as-DSL stream one event at a time (Figure~\ref{fig:s3}). Recovered state grows linearly
+the logs-as-DSL stream one event at a time (Supplementary Fig.~S5). Recovered state grows linearly
 with events replayed; under the conservative SVNNWGA the clone drags cluster consensus to reject
 until it has nearly caught up (95\% acceptance after $48$ of $50$ events), whereas under the
 optimistic SVNNWAA the established peers carry every decision at $100\%$ acceptance throughout the
@@ -374,14 +374,7 @@ during the ``White Friday'' load-spike scenario (S3).
 Holm-corrected $p$-values and effect sizes; all are significant after correction, with large effect
 sizes for the comparisons against eventual consistency and the availability gain under partition.
 
-\input{tables/headline_s2.tex}
-\input{tables/headline_s1.tex}
 \input{tables/significance.tex}
-
-\begin{figure}[t]\centering
-\includegraphics[width=0.7\linewidth]{f2_stale_vs_phi.pdf}
-\caption{Stale-decision rate vs.\ failure-injection rate (S2). Bands are 5000-resample bootstrap
-95\% CIs.}\label{fig:stale}\end{figure}
 
 \begin{figure}[t]\centering
 \includegraphics[width=0.7\linewidth]{f3_pareto.pdf}
@@ -393,33 +386,6 @@ and raft-lww coincide at $(0,0.90)$ (circle behind cross).}\label{fig:pareto}\en
 \includegraphics[width=0.7\linewidth]{f7_availability_partition.pdf}
 \caption{Availability without vs.\ with transient partition (S2, $\varphi=0.1$). The
 strongly-consistent baselines stall; the neutrosophic layer stays available.}\label{fig:partition}\end{figure}
-
-\begin{figure}[t]\centering
-\includegraphics[width=0.65\linewidth]{f8_signal_richness.pdf}
-\caption{RQ1: the indeterminacy axis is well populated and the $(T,I,F)$ decision diverges from a
-boolean quorum on a substantial fraction of decisions.}\label{fig:signal}\end{figure}
-
-\begin{figure}[t]\centering
-\includegraphics[width=0.8\linewidth]{f5_latency_measured.pdf}
-\caption{Measured median decision latency on the real localhost HTTP testbed: local read, single
-round-trip, and $R$-peer fan-out tiers. Log scale: naive-cache is a local read ($\approx0.02$\,ms),
-dwarfed by the network tiers but fully measured ($n=200$ per cell).}\label{fig:latency}\end{figure}
-
-\begin{figure}[t]\centering
-\includegraphics[width=0.95\linewidth]{f6_sensitivity.pdf}
-\caption{Sensitivity of the stale-decision rate to replica count $R$ and cache ratio $\rho$
-(S2, $\varphi=0.1$).}\label{fig:sensitivity}\end{figure}
-
-\begin{figure}[t]\centering
-\includegraphics[width=0.7\linewidth]{f9_s3_convergence.pdf}
-\caption{S3: a fresh clone recovers state by replaying the log; SVNNWGA acceptance trails until
-catch-up while SVNNWAA stays available throughout. State-recovery and SVNNWGA acceptance coincide
-(dashed line over the thick one).}\label{fig:s3}\end{figure}
-
-\begin{figure}[t]\centering
-\includegraphics[width=0.8\linewidth]{f10_throughput.pdf}
-\caption{Measured throughput (decisions/sec) under concurrent closed-loop load on the real HTTP
-testbed.}\label{fig:throughput}\end{figure}
 
 \begin{figure}[t]\centering
 \includegraphics[width=0.7\linewidth]{f11_operator_pareto.pdf}
@@ -439,22 +405,6 @@ selection.}\label{fig:byzantine}\end{figure}
 \caption{Scalability with replica count $R$ (S2, $\varphi=0.1$): the neutrosophic layer's stale-rate
 falls and availability rises with $R$ (at $R$ messages/decision), whereas eventual consistency degrades
 with scale and the boolean quorum stays low-availability.}\label{fig:scalability}\end{figure}
-
-\begin{figure}[t]\centering
-\includegraphics[width=0.85\linewidth]{f14_wan_latency.pdf}
-\caption{Decision latency on a single-host Docker deployment under \emph{emulated} WAN (Toxiproxy
-per-link latency, jitter, and loss): p50 (bar) and p99 (cap), log scale. The wait patterns
-(single-hop, majority, $R$-peer fan-out) separate cleanly and the gap grows with link latency; under
-$2\%$ loss the tails inflate to the $1$\,s decision deadline, most for the fan-out (it waits for the
-slowest of $R$ peers). Real HTTP over proxied sockets; not geo-distributed.}\label{fig:wan}\end{figure}
-
-\begin{figure}[t]\centering
-\includegraphics[width=0.95\linewidth]{f15_tuning.pdf}
-\caption{Axis B: equal-budget metaheuristic tuning of $[\tau,\text{weights}]$ (seven optimizers, $120$
-evaluations each), tuned utility per optimizer (points) versus the uniform-weights baseline (dashed). At
-equal budget the optimizers converge---identically on the symmetric S1/S3, within ${\approx}2\%$ on the
-asymmetric S2---and tuning beats uniform weights only on S2 ($+10.1\%$); on S1/S3 uniform is already
-optimal. No-Free-Lunch: the gain is not an artefact of the optimizer.}\label{fig:tuning}\end{figure}
 
 %====================================================================
 \section{Discussion}
@@ -491,13 +441,13 @@ calibration seeds and freeze them. The paired seed design gives every strategy i
 arrival streams.
 
 \paragraph{External.} The correctness/availability evaluation is simulation-based on synthetic
-e-commerce workloads (sensitivity to $R$ and $\rho$ is probed in Figure~\ref{fig:sensitivity}); how
+e-commerce workloads (sensitivity to $R$ and $\rho$ is probed in Supplementary Fig.~S6); how
 faithfully these map to production microservice traces is untested, and replaying real traces is future
 work. Decision latency is measured on a \emph{real} HTTP testbed---in-process and on a single-host Docker
 Compose deployment---which confirms the communication tiers, but the \emph{absolute} values include local
 runtime overhead and a shared host NIC; we therefore read the latency result as the \emph{relative}
 ordering of the tiers, not as milliseconds. An \emph{emulated}-WAN study under injected per-link latency,
-jitter, and loss (Figure~\ref{fig:wan}) confirms the tiers and tail behaviour on real network paths, but
+jitter, and loss (Supplementary Fig.~S7) confirms the tiers and tail behaviour on real network paths, but
 it is single-host; a \emph{geo-distributed} multi-datacenter study remains future work.
 Three further limitations bound the scope: (i)~the protocol assumes a \emph{static} reachable peer set
 per decision---service churn, elastic scale-out, and dynamic membership are not modeled and would need a
@@ -584,7 +534,8 @@ persisted peer ($T=1$) carries the decision. SVNNWGA is conservative: a single u
 peer ($T=0$) vetoes the aggregate truth.
 
 \subsection{Architecture, DSL, and rules engine}
-The testbed uses a conventional e-commerce decomposition (products, orders, users, front-end). Each
+The testbed uses a conventional e-commerce decomposition (products, orders, users, front-end);
+Figure~\ref{fig:system} shows the overall decision layer. Each
 service holds a two-tier (cache/database) store that tags every value with its $(T,I,F)$ status, and
 services exchange JSON \emph{state} and \emph{rule} messages over a lightweight event bus, never
 reading each other's stores directly. Both message kinds are the DSL: microservice logs are JSON
@@ -625,33 +576,8 @@ value a service already holds is trustworthy enough to act on.
 The submitted layer fixes one aggregation pair (Eqs.~\eqref{eq:waa}--\eqref{eq:wga}), one
 deneutrosophy score, uniform weights, and a probabilistic failure model. To test whether any of these
 choices drives the result, each is generalised into an equal-footing panel and varied one axis at a
-time; the submitted configuration is the anchor and is reproduced exactly. Figure~\ref{fig:pipeline}
+time; the submitted configuration is the anchor and is reproduced exactly. Supplementary Fig.~S9
 shows the audit pipeline.
-
-\begin{figure}[t]
-\centering
-\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
-\begin{tikzpicture}[>={Stealth[length=2.2mm]}, font=\footnotesize,
-  st/.style={draw,rounded corners,fill=blue!6,align=center,minimum height=10mm,minimum width=16mm},
-  ax/.style={draw,rounded corners,fill=gray!12,align=center,minimum height=13mm,minimum width=25mm},
-  tn/.style={draw,rounded corners,fill=orange!14,align=center,minimum height=11mm,minimum width=52mm},
-  gatebox/.style={draw,rounded corners,fill=green!14,align=center,minimum height=10mm,minimum width=17mm}]
-  \node[st] (views) {peer\\$(T,I,F)$};
-  \node[ax,right=6mm of views] (enc) {encoding\\\textbf{crisp}\,/\,graded};
-  \node[ax,right=6mm of enc] (opA) {\textbf{Axis A}: operator\\WAA, WGA, Einstein,\\Dombi, \dots, median, Krum};
-  \node[ax,right=6mm of opA] (scA) {\textbf{Axis A$'$}: score\\std, accuracy,\\cosine, \dots};
-  \node[gatebox,right=6mm of scA] (gate) {gate $s\!\ge\!\tau$\\Act\,/\,Abstain};
-  \draw[->] (views)--(enc); \draw[->] (enc)--(opA); \draw[->] (opA)--(scA); \draw[->] (scA)--(gate);
-  \node[tn,below=11mm of opA] (mh) {\textbf{Axis B}: equal-budget metaheuristic tuner\\GA, DE, CMA-ES, PSO, TPE, RIME, Ninja $\to(\tau,w)$};
-  \draw[->] (mh.north) -- (opA.south);
-  \draw[->] (mh.east) -| (gate.south);
-\end{tikzpicture}}
-\caption{The two-axis audit pipeline. Peer views are encoded (crisp anchor or graded), aggregated by
-an operator-panel member (Axis~A), deneutrosophized by a score-panel member (Axis~A$'$), and gated at
-the calibrated threshold; an equal-budget metaheuristic panel (Axis~B) tunes the threshold and peer
-weights. One axis is varied at a time, holding the others at the submitted anchor.}
-\label{fig:pipeline}
-\end{figure}
 
 \paragraph{Axis A: aggregation operator.} Beyond the optimistic SVNNWAA and conservative SVNNWGA, a
 panel of single-valued neutrosophic weighted operators is evaluated: Einstein and Hamacher
@@ -688,30 +614,6 @@ observable versions alone.
 \State \Return $\{z_p\}$
 \end{algorithmic}
 \end{algorithm}
-
-\begin{table}[t]\centering
-\caption{Graded-encoding anchors (the \textsc{Grade} map of Algorithm~\ref{alg:grade}). A peer's
-observable kind and version-lag $\ell$ relative to the most up-to-date reachable peer (freshness
-$\varphi=1/(1+\ell/\sigma)$, softness $\sigma=2$) map to a single-valued neutrosophic triple $(T,I,F)$:
-$T$ is confidence the held value is the committed-current truth, $I$ is unconfirmedness, $F$ is
-confidence the value is stale, superseded, or absent. The anchors are a documented, tunable design choice
-(calibration override \texttt{grade\_encoding}); the crisp corners $(1,0,0)/(0,1,0)/(0,0,1)$ remain the
-conservative baseline.}
-\label{tab:grade}
-\small
-\begin{tabular}{@{}lccc@{}}
-\toprule
-Peer kind (observable) & $T$ & $I$ & $F$ \\
-\midrule
-Persisted, fresh ($\ell=0$)          & $1.00$ & $0.10$ & $0.00$ \\
-Persisted, lagging ($\ell\to\infty$) & $0.50$ & $0.10$ & $0.40$ \\
-Clean cache, fresh                   & $0.45$ & $0.55$ & $0.10$ \\
-Clean cache, lagging                 & $0.00$ & $0.65$ & $0.35$ \\
-Suspected dirty write                & $0.15\,\varphi$ & $0.45$ & $0.45$ \\
-Absent / unreachable                 & $0.05$ & $0.10$ & $0.85$ \\
-\bottomrule
-\end{tabular}
-\end{table}
 
 \paragraph{Axis A$'$: deneutrosophy score.} The score $s(z)=(2+T-I-F)/3$~\cite{ye2014score} is one
 choice among several. An accuracy-degree score (truth less falsity), a cosine measure to the truth
@@ -760,7 +662,7 @@ compared empirically, not only in prose. Algorithm~\ref{alg:robust} states the r
 \paragraph{Complexity.} A decision issues a single query round to the $R$ reachable peers, so the
 \emph{communication} cost is $O(|R|)$ messages per decision---one round-trip per peer ($O(1)$ for the
 local and single-hop baselines, $O(|R|)$ for every fan-out strategy, reported exactly in
-Tables~\ref{tab:headline-s2}--\ref{tab:headline-s1}). The \emph{computation} per decision is $O(|R|)$ for
+Supplementary Tables~S2 and~S3). The \emph{computation} per decision is $O(|R|)$ for
 the averaging operators (a single linear fold of the $R$ weighted triples), with the deneutrosophy score
 and gate $O(1)$; the Byzantine-robust aggregators cost $O(|R|\log|R|)$ (coordinate-wise median, trimmed
 mean) or $O(|R|^2)$ (Krum's pairwise-distance selection). Memory is $O(|R|)$ for the collected views. The

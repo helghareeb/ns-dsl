@@ -1,0 +1,132 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
+\graphicspath{{../results/figures/}}
+
+\renewcommand{\thefigure}{S\arabic{figure}}
+\renewcommand{\thetable}{S\arabic{table}}
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries Supplementary Information}\\[1ex]
+{\large A decentralized neutrosophic decision layer for global-state freshness in microservices architectures}\\[1ex]
+Haitham A. El-Ghareeb
+\end{center}
+
+\bigskip
+
+\section*{Supplementary Figures}
+
+\setcounter{figure}{0}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.7\linewidth]{f2_stale_vs_phi.pdf}
+\caption{Stale-decision rate vs.\ failure-injection rate (S2). Bands are 5000-resample bootstrap
+95\% CIs.}\label{fig:stale}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.65\linewidth]{f8_signal_richness.pdf}
+\caption{RQ1: the indeterminacy axis is well populated and the $(T,I,F)$ decision diverges from a
+boolean quorum on a substantial fraction of decisions.}\label{fig:signal}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.8\linewidth]{f5_latency_measured.pdf}
+\caption{Measured median decision latency on the real localhost HTTP testbed: local read, single
+round-trip, and $R$-peer fan-out tiers. Log scale: naive-cache is a local read ($\approx0.02$\,ms),
+dwarfed by the network tiers but fully measured ($n=200$ per cell).}\label{fig:latency}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.8\linewidth]{f10_throughput.pdf}
+\caption{Measured throughput (decisions/sec) under concurrent closed-loop load on the real HTTP
+testbed.}\label{fig:throughput}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.7\linewidth]{f9_s3_convergence.pdf}
+\caption{S3: a fresh clone recovers state by replaying the log; SVNNWGA acceptance trails until
+catch-up while SVNNWAA stays available throughout. State-recovery and SVNNWGA acceptance coincide
+(dashed line over the thick one).}\label{fig:s3}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.95\linewidth]{f6_sensitivity.pdf}
+\caption{Sensitivity of the stale-decision rate to replica count $R$ and cache ratio $\rho$
+(S2, $\varphi=0.1$).}\label{fig:sensitivity}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.85\linewidth]{f14_wan_latency.pdf}
+\caption{Decision latency on a single-host Docker deployment under \emph{emulated} WAN (Toxiproxy
+per-link latency, jitter, and loss): p50 (bar) and p99 (cap), log scale. The wait patterns
+(single-hop, majority, $R$-peer fan-out) separate cleanly and the gap grows with link latency; under
+$2\%$ loss the tails inflate to the $1$\,s decision deadline, most for the fan-out (it waits for the
+slowest of $R$ peers). Real HTTP over proxied sockets; not geo-distributed.}\label{fig:wan}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.95\linewidth]{f15_tuning.pdf}
+\caption{Axis B: equal-budget metaheuristic tuning of $[\tau,\text{weights}]$ (seven optimizers, $120$
+evaluations each), tuned utility per optimizer (points) versus the uniform-weights baseline (dashed). At
+equal budget the optimizers converge---identically on the symmetric S1/S3, within ${\approx}2\%$ on the
+asymmetric S2---and tuning beats uniform weights only on S2 ($+10.1\%$); on S1/S3 uniform is already
+optimal. No-Free-Lunch: the gain is not an artefact of the optimizer.}\label{fig:tuning}\end{figure}
+
+\begin{figure}[t]
+\centering
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{%
+\begin{tikzpicture}[>={Stealth[length=2.2mm]}, font=\footnotesize,
+  st/.style={draw,rounded corners,fill=blue!6,align=center,minimum height=10mm,minimum width=16mm},
+  ax/.style={draw,rounded corners,fill=gray!12,align=center,minimum height=13mm,minimum width=25mm},
+  tn/.style={draw,rounded corners,fill=orange!14,align=center,minimum height=11mm,minimum width=52mm},
+  gatebox/.style={draw,rounded corners,fill=green!14,align=center,minimum height=10mm,minimum width=17mm}]
+  \node[st] (views) {peer\\$(T,I,F)$};
+  \node[ax,right=6mm of views] (enc) {encoding\\\textbf{crisp}\,/\,graded};
+  \node[ax,right=6mm of enc] (opA) {\textbf{Axis A}: operator\\WAA, WGA, Einstein,\\Dombi, \dots, median, Krum};
+  \node[ax,right=6mm of opA] (scA) {\textbf{Axis A$'$}: score\\std, accuracy,\\cosine, \dots};
+  \node[gatebox,right=6mm of scA] (gate) {gate $s\!\ge\!\tau$\\Act\,/\,Abstain};
+  \draw[->] (views)--(enc); \draw[->] (enc)--(opA); \draw[->] (opA)--(scA); \draw[->] (scA)--(gate);
+  \node[tn,below=11mm of opA] (mh) {\textbf{Axis B}: equal-budget metaheuristic tuner\\GA, DE, CMA-ES, PSO, TPE, RIME, Ninja $\to(\tau,w)$};
+  \draw[->] (mh.north) -- (opA.south);
+  \draw[->] (mh.east) -| (gate.south);
+\end{tikzpicture}}
+\caption{The two-axis audit pipeline. Peer views are encoded (crisp anchor or graded), aggregated by
+an operator-panel member (Axis~A), deneutrosophized by a score-panel member (Axis~A$'$), and gated at
+the calibrated threshold; an equal-budget metaheuristic panel (Axis~B) tunes the threshold and peer
+weights. One axis is varied at a time, holding the others at the submitted anchor.}
+\label{fig:pipeline}
+\end{figure}
+
+\clearpage
+\section*{Supplementary Tables}
+
+\setcounter{table}{0}
+
+\begin{table}[t]\centering
+\caption{Graded-encoding anchors (the \textsc{Grade} map of Algorithm~2). A peer's
+observable kind and version-lag $\ell$ relative to the most up-to-date reachable peer (freshness
+$\varphi=1/(1+\ell/\sigma)$, softness $\sigma=2$) map to a single-valued neutrosophic triple $(T,I,F)$:
+$T$ is confidence the held value is the committed-current truth, $I$ is unconfirmedness, $F$ is
+confidence the value is stale, superseded, or absent. The anchors are a documented, tunable design choice
+(calibration override \texttt{grade\_encoding}); the crisp corners $(1,0,0)/(0,1,0)/(0,0,1)$ remain the
+conservative baseline.}
+\label{tab:grade}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Peer kind (observable) & $T$ & $I$ & $F$ \\
+\midrule
+Persisted, fresh ($\ell=0$)          & $1.00$ & $0.10$ & $0.00$ \\
+Persisted, lagging ($\ell\to\infty$) & $0.50$ & $0.10$ & $0.40$ \\
+Clean cache, fresh                   & $0.45$ & $0.55$ & $0.10$ \\
+Clean cache, lagging                 & $0.00$ & $0.65$ & $0.35$ \\
+Suspected dirty write                & $0.15\,\varphi$ & $0.45$ & $0.45$ \\
+Absent / unreachable                 & $0.05$ & $0.10$ & $0.85$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\input{tables/headline_s2.tex}
+\input{tables/headline_s1.tex}
+
+\end{document}
