@@ -726,6 +726,20 @@ cost. The same tiers hold on a containerized deployment (five peer containers pl
 Postgres under Docker Compose): a single-hop read measures $\approx 9.6$\,ms median and the $R$-peer
 fan-out $\approx 26.4$\,ms median, confirming the result is not an artifact of the in-process harness.
 
+\paragraph{Decision latency under emulated WAN.} We harden the latency claim on the same containerized
+deployment with a Toxiproxy proxy injecting per-link latency, jitter, and loss
+(Figure~\ref{fig:wan}; single-host \emph{emulation}---real HTTP over real proxied sockets, not a
+geo-distributed cluster). The three communication patterns separate cleanly and the gap \emph{grows}
+with link latency: at a $1$\,ms LAN profile the median single-hop, majority-wait, and $R$-peer fan-out
+decisions are $3.1$, $8.3$, and $13.1$\,ms; at an $80\pm20$\,ms WAN profile they are $83$, $251$, and
+$418$\,ms (p99 $103$, $296$, $479$\,ms). The fan-out tail compounds because a decision waits for the
+slowest of $R$ peers, so jitter and---more sharply---loss inflate it: under $2\%$ packet loss the
+$R$-peer fan-out p99 rises to $1{,}330$\,ms (a dropped reply bounds the decision at the $1$\,s deadline)
+against $1{,}003$\,ms for the single hop. The measured price of decentralized decision making is thus a
+fan-out tail that grows with both latency and loss---the operative cost the message-count column
+abstracts, now quantified on real network paths. Absolute values remain host-bound (shared CPU/NIC); a
+geo-distributed multi-datacenter study is future work (Section~\ref{sec:threats}).
+
 \paragraph{Sensitivity.} The advantage is stable across replica counts $R\in\{3,5,7\}$ and grows with
 the cache ratio $\rho$ (Figure~\ref{fig:sensitivity}): as more reads are unconfirmed, the gap between
 the neutrosophic layer and the eventual-consistency baselines widens, because that is exactly the
@@ -818,6 +832,14 @@ aggregation defends the gate (Lemma~\ref{lem:byz}), not value selection.}\label{
 falls and availability rises with $R$ (at $R$ messages/decision), whereas eventual consistency degrades
 with scale and the boolean quorum stays low-availability.}\label{fig:scalability}\end{figure}
 
+\begin{figure}[t]\centering
+\includegraphics[width=0.85\linewidth]{f14_wan_latency.pdf}
+\caption{Decision latency on a single-host Docker deployment under \emph{emulated} WAN (Toxiproxy
+per-link latency, jitter, and loss): p50 (bar) and p99 (cap), log scale. The wait patterns
+(single-hop, majority, $R$-peer fan-out) separate cleanly and the gap grows with link latency; under
+$2\%$ loss the tails inflate to the $1$\,s decision deadline, most for the fan-out (it waits for the
+slowest of $R$ peers). Real HTTP over proxied sockets; not geo-distributed.}\label{fig:wan}\end{figure}
+
 %====================================================================
 \section{Discussion}
 \label{sec:discussion}
@@ -858,7 +880,9 @@ faithfully these map to production microservice traces is untested, and replayin
 work. Decision latency is measured on a \emph{real} HTTP testbed---in-process and on a single-host Docker
 Compose deployment---which confirms the communication tiers, but the \emph{absolute} values include local
 runtime overhead and a shared host NIC; we therefore read the latency result as the \emph{relative}
-ordering of the tiers, not as milliseconds, and a geo-distributed multi-host study remains future work.
+ordering of the tiers, not as milliseconds. An \emph{emulated}-WAN study under injected per-link latency,
+jitter, and loss (Figure~\ref{fig:wan}) confirms the tiers and tail behaviour on real network paths, but
+it is single-host; a \emph{geo-distributed} multi-datacenter study remains future work.
 Three further limitations bound the scope: (i)~the protocol assumes a \emph{static} reachable peer set
 per decision---service churn, elastic scale-out, and dynamic membership are not modeled and would need a
 membership/discovery layer beneath the gate; (ii)~the DSL event bus adds an operational hop and

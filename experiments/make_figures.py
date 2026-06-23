@@ -261,6 +261,33 @@ def fig_scalability() -> None:
     _save(fig, "f13_scalability")
 
 
+def fig_wan_latency() -> None:
+    """D': measured decision-latency tails under emulated WAN (Toxiproxy latency+jitter+loss)."""
+    path = ROOT / "results" / "tables" / "wan_latency.csv"
+    if not path.exists():
+        return
+    d = pd.read_csv(path)
+    profiles = [p for p in ["lan", "regional", "wan", "wan-lossy"] if p in set(d.profile)]
+    patterns = ["1-hop", "majority", "R-fan-out"]
+    fig, ax = plt.subplots(figsize=(7.5, 4.2))
+    width = 0.8 / len(patterns)
+    for k, pat in enumerate(patterns):
+        sub = d[d.pattern == pat].set_index("profile")
+        xs = [i + (k - len(patterns) / 2 + 0.5) * width for i in range(len(profiles))]
+        p50 = [sub.p50_ms.get(p, float("nan")) for p in profiles]
+        p99 = [sub.p99_ms.get(p, float("nan")) for p in profiles]
+        ax.bar(xs, p50, width=width, label=pat)
+        err = [max(0.0, b - a) for a, b in zip(p50, p99)]   # p99 cap above the p50 bar
+        ax.errorbar(xs, p50, yerr=[[0.0] * len(p50), err], fmt="none", ecolor="0.25", capsize=2, lw=0.8)
+    ax.set_yscale("log")
+    ax.set_xticks(range(len(profiles)))
+    ax.set_xticklabels(profiles)
+    ax.set_ylabel("decision latency (ms, log scale)")
+    ax.set_title("Emulated-WAN decision latency: p50 (bar), p99 (cap)")
+    ax.legend(fontsize=8, title="wait pattern")
+    _save(fig, "f14_wan_latency")
+
+
 def main() -> None:
     if not SUMMARY.exists():
         raise SystemExit(f"missing {SUMMARY}; run experiments/analyze_results.py first")
@@ -276,6 +303,7 @@ def main() -> None:
     fig_operator_pareto(df)
     fig_byzantine()
     fig_scalability()
+    fig_wan_latency()
     print(f"figures -> {FIGDIR}")
 
 
