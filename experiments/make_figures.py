@@ -288,6 +288,30 @@ def fig_wan_latency() -> None:
     _save(fig, "f14_wan_latency")
 
 
+def fig_tuning() -> None:
+    """Axis-B: equal-budget tuning is optimizer-agnostic (No Free Lunch); beats uniform only on S2."""
+    path = ROOT / "results" / "tables" / "weight_tuning.csv"
+    base = ROOT / "results" / "tables" / "weight_tuning_baseline.csv"
+    if not path.exists() or not base.exists():
+        return
+    d = pd.read_csv(path)
+    b = pd.read_csv(base).set_index("scenario")
+    scenarios = [s for s in ["S1", "S2", "S3"] if s in set(d.scenario)]
+    fig, axes = plt.subplots(1, len(scenarios), figsize=(9.5, 3.4))
+    for ax, sc in zip(axes, scenarios):
+        sub = d[d.scenario == sc].sort_values("utility", ascending=False)
+        ax.scatter(range(len(sub)), sub.utility, s=55, zorder=3, color="C0", label="optimizers (tuned)")
+        ax.axhline(b.uniform_utility[sc], ls="--", color="C3", label="uniform weights")
+        ax.set_xticks(range(len(sub)))
+        ax.set_xticklabels(sub.optimizer, rotation=60, fontsize=7)
+        ax.set_title(sc)
+        ax.set_ylabel("utility (avail $-$ cost$\\cdot$stale)" if sc == scenarios[0] else "")
+        ax.grid(True, axis="y", alpha=0.2)
+    axes[-1].legend(fontsize=7, loc="best")
+    fig.suptitle("Axis-B: tuning is optimizer-agnostic; it beats uniform weights only under asymmetric cost (S2)")
+    _save(fig, "f15_tuning")
+
+
 def main() -> None:
     if not SUMMARY.exists():
         raise SystemExit(f"missing {SUMMARY}; run experiments/analyze_results.py first")
@@ -304,6 +328,7 @@ def main() -> None:
     fig_byzantine()
     fig_scalability()
     fig_wan_latency()
+    fig_tuning()
     print(f"figures -> {FIGDIR}")
 
 

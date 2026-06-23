@@ -695,6 +695,18 @@ $\varphi=0.1$): stale-rate $0.235$ (linear), $0.227$ (accuracy), $0.219$ (cosine
 (truth-weighted), at availabilities from $0.929$ down to $0.762$. The Pareto-interior advantage is thus a
 property of the $(T,I,F)$ representation and its gate, not of any single score.
 
+\paragraph{Weight and threshold tuning (Axis B).} Replacing the hand-fit $\tau$ and uniform weights with
+an equal-budget metaheuristic search over $[\tau, w_1,\dots,w_R]$---seven optimizers (random, DE, CMA-ES,
+TPE, PSO, RIME, NiOA) at $120$ evaluations each (Figure~\ref{fig:tuning})---gives a two-part honest
+result. First, tuning earns its keep only where the cost is asymmetric: on the symmetric scenarios S1 and
+S3 every optimizer recovers \emph{exactly} the uniform-weights utility ($0.667$ and $0.292$---the hand-fit
+calibration is already optimal), whereas on the asymmetric-cost S2 the best search improves utility by
+$10.1\%$ ($-0.079\to-0.071$) by weighting peers unequally. Second, at equal budget the optimizer choice is
+largely immaterial: all seven converge to an identical utility on S1 and S3 and to within ${\approx}2\%$
+on S2---where, tellingly, a strong optimizer (TPE) beats uniform while a poorly matched one (CMA-ES) falls
+slightly below it. The tuning gain is therefore real but modest and regime-specific, and---consistent with
+the No-Free-Lunch theorem~\cite{wolpert1997nfl}---not an artifact of choosing a fashionable optimizer.
+
 \paragraph{Byzantine robustness (adversarial faults).} We stress the layer with peers that claim
 \emph{persisted} while serving a fabricated value at an inflated version, and compare the
 Byzantine-robust aggregators (coordinate-wise median, trimmed mean, Krum) against the averaging
@@ -839,6 +851,14 @@ per-link latency, jitter, and loss): p50 (bar) and p99 (cap), log scale. The wai
 (single-hop, majority, $R$-peer fan-out) separate cleanly and the gap grows with link latency; under
 $2\%$ loss the tails inflate to the $1$\,s decision deadline, most for the fan-out (it waits for the
 slowest of $R$ peers). Real HTTP over proxied sockets; not geo-distributed.}\label{fig:wan}\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.95\linewidth]{f15_tuning.pdf}
+\caption{Axis B: equal-budget metaheuristic tuning of $[\tau,\text{weights}]$ (seven optimizers, $120$
+evaluations each), tuned utility per optimizer (points) versus the uniform-weights baseline (dashed). At
+equal budget the optimizers converge---identically on the symmetric S1/S3, within ${\approx}2\%$ on the
+asymmetric S2---and tuning beats uniform weights only on S2 ($+10.1\%$); on S1/S3 uniform is already
+optimal. No-Free-Lunch: the gain is not an artifact of the optimizer.}\label{fig:tuning}\end{figure}
 
 %====================================================================
 \section{Discussion}
