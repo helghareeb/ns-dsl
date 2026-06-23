@@ -32,22 +32,21 @@ Mansoura University, Mansoura, Egypt}
 \cortext[cor1]{Corresponding author}
 
 \begin{abstract}
-Microservices often decide over global state, yet each owns its data and the only cross-service
-signal is a cache that may hold values that were never committed. A boolean fresh/stale flag collapses
-two qualitatively different states into one: a value held only in cache is neither confirmed-committed
-nor truly absent, but \emph{indeterminate}. We develop a decentralized decision layer in which every
-item carries a single-valued neutrosophic triple $(T,I,F)$ for its persistence status; peers fuse their
-views with weighted operators and a deneutrosophy score, then act or abstain with no central authority.
-The layer sits above the consistency substrate and is not a consensus protocol. We prove one-round
-termination together with conservative-safety and optimistic-liveness bounds, generalized to a graded
-encoding. A Byzantine analysis separates gate robustness from value robustness, and operator, score, and
-weight audits confirm that the result is not an artefact of design choices. Against consistency baselines
-the layer occupies a Pareto interior: at a $10\%$ failure rate it reduces the stale-decision rate by
-$16.7$ points relative to last-writer-wins, remains $88\%$ available under partition where a primary
-drops to $45\%$, and matches a boolean quorum's correctness at twice its availability; it also
-generalizes to a distinct feature-store domain. We claim no superiority over consensus protocols: the
-contribution is a transparent, reproducible trade-off, and every reported number can be regenerated from
-committed code, a content-hashed calibration file, and fixed random seeds.
+Microservices decide over global state, yet each owns its data and the only cross-service
+signal is a cache that may hold uncommitted values. A boolean fresh/stale flag cannot express a value
+held only in cache: neither committed nor absent, but \emph{indeterminate}. We develop a decentralized
+decision layer where each item carries a single-valued neutrosophic triple $(T,I,F)$ for persistence
+status; peers fuse their views with weighted operators and a deneutrosophy score and act or abstain
+without central authority. The layer sits above the consistency substrate and is not a consensus
+protocol. We prove one-round termination and conservative-safety/optimistic-liveness bounds (generalized
+to a graded encoding); a Byzantine analysis separates gate from value robustness; and operator, score,
+and weight audits confirm it is not a design artefact. Against consistency baselines it occupies a
+Pareto interior: at a $10\%$ failure rate it cuts the stale-decision rate by $16.7$ points versus
+last-writer-wins, stays $88\%$ available under partition where a primary drops to $45\%$, matches a
+boolean quorum's correctness at twice its availability, and generalizes to a distinct feature-store
+domain. We claim no superiority over consensus; the contribution is a transparent, reproducible trade-off
+whose every reported number regenerates from committed code, a content-hashed calibration, and fixed
+seeds.
 \end{abstract}
 
 \begin{keyword}
@@ -209,11 +208,13 @@ Figure~\ref{fig:stale} shows stale-decision rate versus failure-injection rate; 
 the correctness/availability trade-off; Figure~\ref{fig:partition} availability under partition.
 Table~\ref{tab:headline-s2} reports S2 in full; Table~\ref{tab:headline-s1} reports S1.
 
-\paragraph{RQ1: signal richness.} The indeterminacy axis is heavily populated (mean cache occupancy
+\subsection{Signal richness}
+The indeterminacy axis is heavily populated (mean cache occupancy
 $\approx 0.4$), and the neutrosophic decision differs from a boolean quorum on a substantial fraction
 of decisions---decisions the boolean flag cannot make without abstaining (Figure~\ref{fig:signal}).
 
-\paragraph{RQ2: correctness vs.\ eventual consistency.} At $\varphi=0.1$ (S2, no partition),
+\subsection{Correctness and availability under failure}
+At $\varphi=0.1$ (S2, no partition),
 neutro-waa (the optimistic weighted-arithmetic configuration of the layer; Section~\ref{sec:methods})
 attains a stale-rate of $0.248$ $[0.244,0.251]$ versus $0.415$ for lww-crdt, $0.506$ for
 naive-cache, and $0.349$ for the PBS partial-quorum reader (the nearest prior art)---absolute reductions of
@@ -235,7 +236,8 @@ most decisions ($0.402$ availability at $\varphi=0.1$, S2); neutro-waa attains c
 at $0.942$ availability---roughly $2.3\times$. This isolates the contribution: retaining $(T,I,F)$
 rather than a boolean flag converts indeterminacy into available, correct decisions.
 
-\paragraph{RQ2 vs.\ a single-probability control: is $(T,I,F)$ a relabelled probability?} A one-bit
+\subsection{Comparison with a single-probability gate}
+A one-bit
 quorum is an easy control; the sharper test is a \emph{calibrated single-probability} gate (prob-gate)
 that collapses the same evidence into one Bayesian freshness posterior and acts when it clears $\tau$.
 prob-gate is a strong baseline---far above the boolean quorum (availability $0.998$ vs.\ $0.402$ at S2,
@@ -251,7 +253,8 @@ decisions, and the operator/score/threshold family spans the whole frontier
 representational---frontier control and an interpretable separation of indeterminacy from falsity---not a
 uniform accuracy win over a strong scalar.
 
-\paragraph{RQ5: operator ablation.} SVNNWGA (the single-valued neutrosophic weighted geometric averaging
+\subsection{Operator, score, and weight robustness}
+SVNNWGA (the single-valued neutrosophic weighted geometric averaging
 operator) is the conservative operator: lower stale-rate (e.g.\ S3 transient at $\varphi=0.1$: $0.218$
 vs.\ $0.288$) at much lower availability ($0.279$ vs.\ $0.993$). The arithmetic (SVNNWAA) and geometric (SVNNWGA) operators
 thus span an optimistic--conservative frontier, selectable per scenario via $\tau$.
@@ -285,7 +288,8 @@ on S2, where a strong optimizer (TPE) beats uniform while a poorly matched one (
 slightly below it. The tuning gain is therefore real but modest and regime-specific, and---consistent with
 the No-Free-Lunch theorem~\cite{wolpert1997nfl}---not an artefact of choosing a fashionable optimizer.
 
-\paragraph{Byzantine robustness (adversarial faults).} We stress the layer with peers that claim
+\subsection{Byzantine robustness}
+We stress the layer with peers that claim
 \emph{persisted} while serving a fabricated value at an inflated version, and compare the
 Byzantine-robust aggregators (coordinate-wise median, trimmed mean, Krum) against the averaging
 operators (Figure~\ref{fig:byzantine}, S2, $R=5$). With no adversary the readers behave normally
@@ -301,7 +305,8 @@ not govern that choice. The interpretation is a scope statement: the mechanism t
 inflation but not value fabrication, and closing the latter calls for a robust value-quorum, which we
 leave to future work.
 
-\paragraph{Measured latency.} On a real localhost HTTP testbed (Section~\ref{sec:methods}), the
+\subsection{Latency and throughput}
+On a real localhost HTTP testbed (Section~\ref{sec:methods}), the
 strategies separate into three latency tiers that confirm the communication-cost model
 (Figure~\ref{fig:latency}): a local read (naive-cache, $\approx 0$\,ms), a single round-trip
 (centralized, raft-lww, single-peer), a partial quorum (pbs-quorum), and a full $R$-peer fan-out
@@ -335,7 +340,8 @@ the cache ratio $\rho$ (Figure~\ref{fig:sensitivity}): as more reads are unconfi
 the neutrosophic layer and the eventual-consistency baselines widens, because that is exactly the
 regime in which the indeterminacy axis carries information.
 
-\paragraph{Scalability with cluster size.} Sweeping the replica count $R\in\{2,\dots,50\}$ at fixed
+\subsection{Scalability and cross-domain generality}
+Sweeping the replica count $R\in\{2,\dots,50\}$ at fixed
 $\tau$ (Figure~\ref{fig:scalability}), the neutrosophic layer's stale-rate \emph{falls} monotonically
 with $R$---neutro-waa from $0.334$ at $R{=}2$ to $0.099$ at $R{=}50$, with availability rising from
 $0.805$ to $1.0$---at a per-decision message cost that scales linearly ($R$ messages, confirmed exactly
@@ -472,7 +478,7 @@ Langium/LSP workbench, or a Lark grammar without altering any result in this pap
 the decision mechanism, not the parser; we keep ANTLR for its mature multi-target tooling.
 
 %====================================================================
-\subsection{Threats to validity}
+\paragraph{Threats to validity.}
 \label{sec:threats}
 
 \paragraph{Construct.} The layer is a freshness-decision mechanism, not a consensus protocol;
@@ -505,7 +511,7 @@ and report effect sizes with bootstrap CIs; multiple comparisons are Holm-correc
 families; cross-seed non-replication ($2\%$ of cells) is flagged and excluded from headline claims.
 
 %====================================================================
-\subsection{Conclusion}
+\paragraph{Conclusion.}
 \label{sec:conclusion}
 
 We developed a decentralized neutrosophic decision layer for microservice global-state freshness---a
