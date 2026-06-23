@@ -576,10 +576,15 @@ peers hold, and the layer never asserts cross-partition agreement --- consistent
 a freshness gate above the consistency substrate, not a consensus protocol.
 
 \subsection{Scenarios and ground truth}
-Three scenarios instantiate the case study: (S1) personalized dynamic pricing (read-heavy), (S2)
-suspicious-order fraud detection (asymmetric cost---a missed fraud is worse than a false alarm), and
-(S3) ``White Friday'' load-spike with stateful container cloning, where a fresh replica catches up by
-replaying the logs-as-DSL stream. A privileged \emph{oracle}---written only by the workload, never by
+Four scenarios instantiate the study. Three are e-commerce: (S1) personalized dynamic pricing
+(read-heavy), (S2) suspicious-order fraud detection (asymmetric cost---a missed fraud is worse than a
+false alarm), and (S3) ``White Friday'' load-spike with stateful container cloning, where a fresh replica
+catches up by replaying the logs-as-DSL stream. The fourth probes a \emph{distinct} domain to test
+cross-domain generality: (S4) an ML \emph{online feature store}, where features are updated frequently
+(high version-lag and dirty-write rates), served largely from cache, and a stale served feature degrades
+a downstream prediction (high stale-cost)---a stylized but timely regime, not real traces (replaying
+production traces remains future work, Section~\ref{sec:threats}). A privileged \emph{oracle}---written
+only by the workload, never by
 a service---records the totally ordered commits and reconstructs the true global state at any logical
 time. A decision is \emph{stale} iff the value acted on differs from the oracle's true value.
 
@@ -600,10 +605,10 @@ Each cell is $(\text{scenario},\text{system},\varphi,\text{partition})$ at $R=5$
 ratio $\rho=0.5$, with failure-injection rate $\varphi\in\{0,0.1,0.2,0.3\}$ and partition
 $\in\{\text{none},\text{transient}\}$; the workload models clean-cached, dirty-cached (an uncommitted
 later write---the dirty-read phenomenon), persisted-latest, confidently-stale-persisted, and absent
-peers. Each cell runs $50$ repetitions of $200$ decisions under five master seeds---$250$ repetitions
+peers. Each cell runs $50$ repetitions of $300$ decisions under five master seeds---$250$ repetitions
 per cell. The environment RNG excludes the system name, so every strategy sees the \emph{identical}
 decision and failure stream (a paired design). \emph{Unit of analysis.} Each repetition contributes one
-summary statistic (its mean stale-rate or availability over its $200$ decisions), and every significance
+summary statistic (its mean stale-rate or availability over its $300$ decisions), and every significance
 test pairs strategies \emph{at the repetition level}: the sample size of each paired test is the number
 of repetitions ($n=250$ per cell), not the number of individual decisions, so within-repetition
 correlation among decisions does not inflate the effective $n$. The acceptance threshold $\tau$ is fit
@@ -611,7 +616,7 @@ per (scenario, operator) on \emph{held-out} calibration seeds by maximizing avai
 per-scenario cost on the stale-rate, then frozen. A single canonical aggregator emits all tables and
 figures; it asserts a common calibration hash across inputs and refuses to mix files that disagree (R6).
 For full transparency the locked calibration's canonical-JSON SHA-256 is
-{\footnotesize\ttfamily fe4dcdc7627569588da3de289f82469f8d1cf4ac7431889dbfc473803f626a58}. The aggregator
+{\footnotesize\ttfamily 16dc5ef33908a3723eb896b1bba1129ed147643f8a3bef4a55c459f9ec836070}. The aggregator
 computes stale-rate over acted decisions (success-only) and availability separately, applies Holm
 correction within a-priori comparison families, reports paired Cohen's $d$ with 5000-resample bootstrap
 95\% CIs, and flags any cell whose headline contrast does not replicate in sign across all five seeds.
@@ -627,7 +632,7 @@ over real sockets with a configurable per-hop RTT. A Docker Compose deployment o
 \section{Results}
 \label{sec:results}
 
-Across the validated grid ($216$ cells over five master seeds), $97\%$ of headline cells replicate
+Across the validated grid ($288$ cells over five master seeds), $98\%$ of headline cells replicate
 in sign across all seeds.
 Figure~\ref{fig:stale} shows stale-decision rate versus failure-injection rate; Figure~\ref{fig:pareto}
 the correctness/availability trade-off; Figure~\ref{fig:partition} availability under partition.
@@ -766,6 +771,17 @@ The contrast with the baselines is sharp: eventual consistency \emph{degrades} w
 stale-rate rises from $0.367$ to $0.994$ as more replicas diverge), and the boolean quorum's availability
 stays low throughout ($0.28$--$0.41$). The layer therefore scales in the direction that matters---larger
 clusters make its decisions better, not worse.
+
+\paragraph{Cross-domain generality (S4).} To test whether the result is specific to e-commerce, S4
+instantiates a distinct domain---an ML online feature store (high version-lag and dirty-write rates,
+served largely from cache, high stale-cost; Section~\ref{sec:methods}). The Pareto-interior structure
+replicates: at $\varphi=0.1$ neutro-waa attains a stale-rate of $0.402$ at $0.953$ availability, fresher
+than eventual consistency (lww-crdt $0.427$ at $1.0$) and the single-probability gate (prob-gate $0.412$
+at $0.998$), and far more available than the boolean quorum ($0.452$ at only $0.451$); the graded operator
+trades more abstention ($0.626$ availability) for a markedly lower stale-rate ($0.327$). The regime is
+harder overall---every reader is staler than on the e-commerce scenarios---and the margins over the strong
+\emph{scalar} baselines are modest, consistent with the single-probability finding; but the qualitative
+advantage of retaining the $(T,I,F)$ signal carries to a second, structurally different domain.
 
 \paragraph{S3: clone catch-up.} A freshly cloned replica boots with every key absent and replays
 the logs-as-DSL stream one event at a time (Figure~\ref{fig:s3}). Recovered state grows linearly
