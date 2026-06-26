@@ -57,8 +57,17 @@ software zip).
    editors and reviewers have immediate access. On acceptance, switch the record's access to **Open**
    (or set an embargo = expected publication date).
 3. **SNAPP:** Declaration → Data Availability → **Yes**; paste the statement above verbatim.
-4. Upload the revised package from `paper/submission/`: `manuscript.pdf`, `ns-dsl_manuscript.zip`,
-   `supplementary.pdf` / `ns-dsl_supplementary.zip`, and `Supplementary_Data_1.zip`, before 05 Jul 2026.
+4. Upload the revised files from `paper/submission/` before 05 Jul 2026:
+   - **Main manuscript (LaTeX source, not PDF):** `ns-dsl_manuscript_flat.zip` — all files at the top
+     level (no subfolders), figures by name; recompiles to 16 pp. (`ns-dsl_manuscript.zip` is the same
+     content with a `figures/` subfolder, the structure SNAPP already compiled at first submission —
+     use it if you prefer; the flat one is the safe default.) The main `.tex` is `manuscript.tex`;
+     references are inlined (`thebibliography`), so no `.bib`/`.bbl` is needed.
+   - **Supplementary Information:** `supplementary.pdf` (single PDF).
+   - **Supplementary Data / Source Data:** `Supplementary_Data_1.zip` (the 14 result-summary CSVs).
+   - Cover letter: `cover_letter.pdf` (update if desired).
+   The full code + 45 MB raw stay in the restricted **Zenodo** record (DOI 10.5281/zenodo.20932989);
+   give reviewers the Zenodo secret link in the response — do **not** upload the 45 MB raw to SNAPP.
 
 ## ▶ Suggested reply to the editor
 > Dear Dr Arumugam, thank you for the guidance. We have revised the Data Availability statement to
