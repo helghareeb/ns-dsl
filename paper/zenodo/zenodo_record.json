@@ -13,9 +13,6 @@
     "access_right": "restricted",
     "access_conditions": "Held under restricted access during peer review. Editors and reviewers of Scientific Reports are granted access via the private link provided to the editorial office. The record is released openly upon publication: the data under CC BY 4.0 and the bundled software under the MIT licence.",
     "keywords": ["microservices", "neutrosophic sets", "data freshness", "eventual consistency", "decision under uncertainty", "reproducibility", "open data", "open source"],
-    "related_identifiers": [
-      {"relation": "isSupplementTo", "identifier": "Scientific Reports submission c5ae1f20-9e89-4562-b69d-5dade5aca9d7", "scheme": "other"}
-    ],
-    "notes": "Files in this record: nsdsl-data-v1.zip (raw + aggregated outputs, figures, calibration), nsdsl-software-v1.zip (implementation, MIT), README. One DOI covers both; replace the placeholder 10.5281/zenodo.XXXXXXX in the manuscript with the reserved DOI before final submission."
+    "notes": "Supplement to the article 'A decentralized neutrosophic decision layer for global-state freshness in microservices architectures' (Scientific Reports, submission c5ae1f20-9e89-4562-b69d-5dade5aca9d7, under review). Do NOT enter the submission ID under 'Related works/identifiers' -- it has no recognized identifier scheme and Zenodo will reject it; add the article DOI there (relation: is supplement to) only after publication. Files: nsdsl-data-v1.zip (raw + aggregated outputs, figures, calibration), nsdsl-software-v1.zip (implementation, MIT), README. One DOI covers both; replace the placeholder 10.5281/zenodo.XXXXXXX in the manuscript with the reserved DOI before final submission."
   }
 }
