@@ -303,7 +303,7 @@ def fig_tuning() -> None:
     d = pd.read_csv(path)
     b = pd.read_csv(base).set_index("scenario")
     scenarios = [s for s in ["S1", "S2", "S3"] if s in set(d.scenario)]
-    fig, axes = plt.subplots(1, len(scenarios), figsize=(9.5, 3.4))
+    fig, axes = plt.subplots(1, len(scenarios), figsize=(11, 3.6))
     for ax, sc in zip(axes, scenarios):
         sub = d[d.scenario == sc].sort_values("utility", ascending=False)
         ax.scatter(range(len(sub)), sub.utility, s=55, zorder=3, color="C0", label="optimizers (tuned)")
@@ -312,9 +312,13 @@ def fig_tuning() -> None:
         ax.set_xticklabels(sub.optimizer, rotation=60, fontsize=7)
         ax.set_title(sc)
         ax.set_ylabel("utility (avail $-$ cost$\\cdot$stale)" if sc == scenarios[0] else "")
+        ax.tick_params(axis="y", labelsize=7)
         ax.grid(True, axis="y", alpha=0.2)
     axes[-1].legend(fontsize=7, loc="best")
-    fig.suptitle("Axis-B: tuning is optimizer-agnostic; it beats uniform weights only under asymmetric cost (S2)")
+    fig.suptitle("Axis-B: tuning is optimizer-agnostic; it beats uniform weights only under asymmetric cost (S2)",
+                 fontsize=10)
+    # widen the inter-panel gap so each panel's y-tick labels do not collide with the neighbour
+    fig.subplots_adjust(left=0.07, right=0.99, top=0.82, bottom=0.24, wspace=0.55)
     _save(fig, "f15_tuning")
 
 

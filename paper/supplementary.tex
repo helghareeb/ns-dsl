@@ -2,6 +2,7 @@
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
+\usepackage{tabularx}
 \usepackage{graphicx}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
@@ -142,7 +143,7 @@ together with the figure and table generators they regenerate every reported num
 \caption{Contents of \texttt{Supplementary\_Data\_1.zip}.}
 \label{tab:sidata}
 \small
-\begin{tabular}{@{}ll@{}}
+\begin{tabularx}{\textwidth}{@{}lX@{}}
 \toprule
 File & Underlies \\
 \midrule
@@ -154,11 +155,13 @@ File & Underlies \\
 \texttt{byzantine.csv}              & adversarial-peer robustness \\
 \texttt{tau\_fit.csv}               & held-out threshold calibration \\
 \texttt{weight\_tuning.csv}         & Fig.~\ref{fig:tuning} (Axis-B metaheuristic tuning) \\
-\texttt{latency\_measured.csv}, \texttt{latency\_docker.csv}, \texttt{wan\_latency.csv} & Figs.~\ref{fig:latency},~\ref{fig:wan} (measured latency) \\
+\texttt{latency\_measured.csv}      & Fig.~\ref{fig:latency} (measured latency, localhost) \\
+\texttt{latency\_docker.csv}        & Fig.~\ref{fig:latency} (measured latency, Docker) \\
+\texttt{wan\_latency.csv}           & Fig.~\ref{fig:wan} (emulated-WAN latency) \\
 \texttt{throughput.csv}             & Fig.~\ref{fig:throughput} (throughput) \\
 \texttt{s3\_convergence.csv}        & Fig.~\ref{fig:s3} (clone catch-up) \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 The complete raw per-trial outputs and the full implementation that regenerate these summaries are
