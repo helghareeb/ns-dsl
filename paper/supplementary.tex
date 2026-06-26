@@ -129,4 +129,40 @@ Absent / unreachable                 & $0.05$ & $0.10$ & $0.85$ \\
 \input{tables/headline_s2.tex}
 \input{tables/headline_s1.tex}
 
+\clearpage
+\section*{Supplementary Data}
+
+The aggregated result summaries that underlie every figure and table are provided as machine-readable
+CSV files in \texttt{Supplementary\_Data\_1.zip}, accompanying this article. Each file is produced by
+the single canonical aggregator from the raw per-trial outputs under a fixed, content-hashed
+calibration (SHA-256 recorded in every file header) and the random seeds described in the Methods;
+together with the figure and table generators they regenerate every reported number.
+
+\begin{table}[h]\centering
+\caption{Contents of \texttt{Supplementary\_Data\_1.zip}.}
+\label{tab:sidata}
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+File & Underlies \\
+\midrule
+\texttt{per\_config\_summary.csv}   & headline per-configuration outcomes (all main results) \\
+\texttt{pairwise\_tests.csv}        & Holm-corrected pairwise comparisons + effect sizes \\
+\texttt{multiseed\_validation.csv}  & cross-seed replication checks \\
+\texttt{sensitivity.csv}            & Fig.~\ref{fig:sensitivity} (sensitivity to $R$, $\rho$) \\
+\texttt{scalability.csv}            & scalability sweep \\
+\texttt{byzantine.csv}              & adversarial-peer robustness \\
+\texttt{tau\_fit.csv}               & held-out threshold calibration \\
+\texttt{weight\_tuning.csv}         & Fig.~\ref{fig:tuning} (Axis-B metaheuristic tuning) \\
+\texttt{latency\_measured.csv}, \texttt{latency\_docker.csv}, \texttt{wan\_latency.csv} & Figs.~\ref{fig:latency},~\ref{fig:wan} (measured latency) \\
+\texttt{throughput.csv}             & Fig.~\ref{fig:throughput} (throughput) \\
+\texttt{s3\_convergence.csv}        & Fig.~\ref{fig:s3} (clone catch-up) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The complete raw per-trial outputs and the full implementation that regenerate these summaries are
+archived under restricted access in Zenodo (data DOI: 10.5281/zenodo.XXXXXXX; software DOI:
+10.5281/zenodo.YYYYYYY); see the Data and Code availability statements.
+
 \end{document}

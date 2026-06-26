@@ -43,3 +43,6 @@ paper/*.spl
 
 # Large raw data (regenerable via download.sh)
 data/*/raw/
+
+# Zenodo deposit packages (built locally, uploaded to Zenodo; data zip carries the 45MB raw)
+paper/zenodo/*.zip

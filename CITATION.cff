@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use this software or data, please cite the article and the archived records."
+title: "ns-dsl: a decentralized neutrosophic decision layer for global-state freshness in microservices"
+authors:
+  - family-names: El-Ghareeb
+    given-names: Haitham A.
+    affiliation: "Information Systems Department, Faculty of Computers and Information Sciences, Mansoura University, Mansoura, Egypt"
+license: MIT
+repository-code: "https://github.com/helghareeb/ns-dsl"
+abstract: >-
+  Implementation and reproducible evaluation of a decentralized neutrosophic (T,I,F)
+  decision layer for global-state freshness in microservices architectures. Peers fuse
+  single-valued neutrosophic views with weighted-averaging operators and a deneutrosophy
+  score to decide, without a central authority, whether locally-held state is fresh enough
+  to act on.
+keywords:
+  - microservices
+  - neutrosophic sets
+  - data freshness
+  - eventual consistency
+  - decision under uncertainty
+preferred-citation:
+  type: article
+  title: "A decentralized neutrosophic decision layer for global-state freshness in microservices architectures"
+  authors:
+    - family-names: El-Ghareeb
+      given-names: Haitham A.
+  journal: "Scientific Reports"
+  year: 2026
+  notes: "Under review. DOI to be added on publication."
