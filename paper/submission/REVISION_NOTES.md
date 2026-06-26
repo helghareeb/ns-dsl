@@ -1,5 +1,9 @@
 # Scientific Reports — revision (Data Availability) — action sheet
 
+> ✅ **SUBMITTED 26 Jun 2026** (ahead of the 05 Jul deadline). Revision 1 uploaded via SNAPP with
+> the compliant Data Availability declaration set to "Yes", the revised manuscript + SI, and the
+> response letter carrying the Zenodo reviewer link. This sheet is retained as the record.
+
 **Submission ID:** c5ae1f20-9e89-4562-b69d-5dade5aca9d7
 **Due:** 05 Jul 2026 · **Editor:** D. Arumugam (srep@nature.com)
 
