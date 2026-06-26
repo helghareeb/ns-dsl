@@ -23,7 +23,7 @@ calibration.
 
 ## Regenerating
 
-With the companion software archive (Zenodo DOI 10.5281/zenodo.YYYYYYY):
+With the software bundled in this same Zenodo record (`nsdsl-software-v1.zip`):
 
 ```bash
 pip install -e '.[dev]'

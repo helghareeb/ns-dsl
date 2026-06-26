@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "upload_type": "dataset",
+    "title": "Supporting code and data for \"A decentralized neutrosophic decision layer for global-state freshness in microservices architectures\"",
+    "creators": [
+      {
+        "name": "El-Ghareeb, Haitham A.",
+        "affiliation": "Information Systems Department, Faculty of Computers and Information Sciences, Mansoura University, Mansoura, Egypt"
+      }
+    ],
+    "description": "Single combined archive supporting the article 'A decentralized neutrosophic decision layer for global-state freshness in microservices architectures' (Scientific Reports, under review). It contains BOTH (i) the complete evaluation data -- the raw per-trial CSVs for all five master seeds, the canonical aggregated result summaries underlying every figure and table, the generated figures, and the content-hashed calibration file -- and (ii) the full implementation: the neutrosophic operator/score panels, the ANTLR-based DSL and rules engine, the decentralized act/abstain decision protocol, the baselines, the simulator, and the figure/table generators (file nsdsl-software-v1.zip). All outputs are produced under a fixed calibration (canonical SHA-256 16dc5ef33908a3723eb896b1bba1129ed147643f8a3bef4a55c459f9ec836070, recorded in every CSV header) and the recorded random seeds described in the Methods. The data are released under CC BY 4.0; the bundled software is released under the MIT licence (see the LICENSE file inside nsdsl-software-v1.zip). RESTRICTED during peer review; editors and reviewers obtain access via the private link provided to the editorial office; released openly upon publication.",
+    "license": "CC-BY-4.0",
+    "access_right": "restricted",
+    "access_conditions": "Held under restricted access during peer review. Editors and reviewers of Scientific Reports are granted access via the private link provided to the editorial office. The record is released openly upon publication: the data under CC BY 4.0 and the bundled software under the MIT licence.",
+    "keywords": ["microservices", "neutrosophic sets", "data freshness", "eventual consistency", "decision under uncertainty", "reproducibility", "open data", "open source"],
+    "related_identifiers": [
+      {"relation": "isSupplementTo", "identifier": "Scientific Reports submission c5ae1f20-9e89-4562-b69d-5dade5aca9d7", "scheme": "other"}
+    ],
+    "notes": "Files in this record: nsdsl-data-v1.zip (raw + aggregated outputs, figures, calibration), nsdsl-software-v1.zip (implementation, MIT), README. One DOI covers both; replace the placeholder 10.5281/zenodo.XXXXXXX in the manuscript with the reserved DOI before final submission."
+  }
+}
