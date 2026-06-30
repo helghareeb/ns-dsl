@@ -7,6 +7,14 @@ authors:
     affiliation: "Information Systems Department, Faculty of Computers and Information Sciences, Mansoura University, Mansoura, Egypt"
 license: MIT
 repository-code: "https://github.com/helghareeb/ns-dsl"
+doi: 10.5281/zenodo.20932989
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.20932989
+    description: "Archived code and data (Zenodo, this version)"
+  - type: doi
+    value: 10.5281/zenodo.20932988
+    description: "Zenodo concept DOI (all versions)"
 abstract: >-
   Implementation and reproducible evaluation of a decentralized neutrosophic (T,I,F)
   decision layer for global-state freshness in microservices architectures. Peers fuse
