@@ -37,6 +37,14 @@ dev = [
     "ruff>=0.4",
     "mypy>=1.9",
 ]
+# Metaheuristic optimizer backends for the tuning panel (experiments.tune_weights);
+# without these the cmaes/tpe/pso optimizers no-op and the optimizer-panel results
+# cannot be reproduced.
+optim = [
+    "cma>=3.0",
+    "optuna>=3.0",
+    "pyswarms>=1.3",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/nsdsl"]

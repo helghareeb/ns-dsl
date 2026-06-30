@@ -37,6 +37,13 @@ paper/*.fdb_latexmk
 paper/*.fls
 paper/*.spl
 !paper/figures/
+# submission-folder LaTeX build artifacts (the .pdf/.tex/.zip deliverables stay tracked)
+paper/submission/*.aux
+paper/submission/*.log
+paper/submission/*.out
+paper/submission/*.fdb_latexmk
+paper/submission/*.fls
+paper/submission/*.synctex.gz
 
 # OS
 .DS_Store
