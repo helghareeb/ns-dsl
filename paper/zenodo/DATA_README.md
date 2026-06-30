@@ -34,4 +34,4 @@ PYTHONPATH=src:. python -m experiments.make_figures     # -> results/figures/*
 
 ## Licence
 
-CC BY 4.0. Restricted during peer review; released openly upon publication.
+Data under CC BY 4.0; bundled software under the MIT licence. Openly available (the development repository is at https://github.com/helghareeb/ns-dsl).
